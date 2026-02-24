@@ -1,0 +1,541 @@
+/* src/App.css */
+
+/* --- GLOBAL VARIABLES (THE BABCOCK THEME) --- */
+:root {
+  --color-primary: #003366;       /* Babcock Navy Blue */
+  --color-primary-dark: #002244;  /* Darker Navy for hover states */
+  
+  --color-accent: #D4AF37;        /* Babcock Gold */
+  --color-accent-dark: #b5952f;   /* Darker Gold for hover states */
+  
+  --color-background: #f4f7f6;    /* Light gray/blue app background */
+  --color-surface: #ffffff;       /* White for cards and inputs */
+  
+  --color-text-main: #333333;     /* Standard dark text */
+  --color-text-muted: #666666;    /* Gray text for subtitles */
+  
+  --color-border: #d1d5db;        /* Light gray for input borders */
+  
+  --color-success-bg: #d1e7dd;
+  --color-success-text: #0f5132;
+  --color-error-bg: #f8d7da;
+  --color-error-text: #842029;
+}
+
+/* --- BASE STYLES --- */
+body {
+  background-color: var(--color-background);
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--color-text-main);
+
+}
+
+/* --- LAYER 3 (TOP): The Main Container & The Form --- */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* --- LAYER 1 (BOTTOM): The Faded Background Image --- */
+.auth-container::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  
+  /* Your image goes here */
+  background: url('./assets/images/tower.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.9;
+  
+  z-index: -2; /* Pushes it all the way to the back */
+}
+
+/* --- LAYER 2 (MIDDLE): The Blue Gradient Overlay --- */
+.auth-container::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+
+  background: linear-gradient(rgba(0, 51, 102, 0.7), rgba(0, 87, 184, 0.7));
+  
+  z-index: -1;
+}
+
+/* The white box holding the form */
+.auth-card {
+  background: var(--color-surface);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+/* --- LOGO --- */
+.auth-logo {
+  height: 75px; /* Constrains the height perfectly */
+  width: auto;
+  margin-bottom: 12px;
+}
+
+/* --- TYPOGRAPHY --- */
+.auth-title {
+  color: var(--color-primary);
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 5px;
+  margin-top: 0;
+}
+
+.auth-title span {
+  color: var(--color-accent);
+}
+
+.auth-subtitle {
+  color: var(--color-text-muted);
+  font-size: 15px;
+  margin-bottom: 30px;
+}
+
+/* --- FORM ELEMENTS --- */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.auth-input {
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background-color: #f9fafb;
+  color: var(--color-text-main);
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background-color: var(--color-surface);
+  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1); 
+}
+
+.auth-button {
+  padding: 15px;
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
+}
+
+.auth-button:hover {
+  background-color: var(--color-primary-dark); 
+}
+
+/* --- FOOTER & LINKS --- */
+.auth-footer {
+  margin-top: 25px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.auth-footer a {
+  color: var(--color-accent);
+  font-weight: bold;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.auth-footer a:hover {
+  color: var(--color-accent-dark);
+  text-decoration: underline;
+}
+
+/* --- MESSAGES --- */
+.message-box {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.success { 
+  background-color: var(--color-success-bg); 
+  color: var(--color-success-text); 
+}
+.error { 
+  background-color: var(--color-error-bg); 
+  color: var(--color-error-text); 
+}
+
+
+/* --- MEGA NAVBAR STYLES --- */
+.navbar-wrapper {
+  background-color: var(--color-primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Top Row: Main Navigation */
+.navbar-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 5%;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.nav-brand h2 {
+  margin: 0;
+  font-size: 24px;
+  color: white;
+  font-weight: 800;
+}
+
+.nav-brand span {
+  color: var(--color-accent);
+}
+
+.nav-search-container {
+  flex: 1;
+  max-width: 600px;
+  margin: 0 40px;
+  display: flex;
+}
+
+.nav-search-input {
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 25px;
+  font-size: 15px;
+  outline: none;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+/* Icon Links (Help, Saved, Notifications) */
+.nav-icon-link {
+  color: white;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 20px;
+  gap: 4px;
+  transition: color 0.2s;
+}
+
+.nav-icon-link span {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.nav-icon-link:hover {
+  color: var(--color-accent);
+}
+
+/* Profile Dropdown Container */
+.nav-profile-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* The actual dropdown box */
+.dropdown-content {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background-color: white;
+  color: var(--color-text-main);
+  min-width: 200px;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  padding: 12px 20px;
+  text-decoration: none;
+  color: var(--color-text-main);
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #eee;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+  color: var(--color-primary);
+}
+
+.dropdown-logout {
+  color: var(--color-error-text);
+  border-bottom: none;
+}
+
+/* The Sell Button */
+.nav-btn-sell {
+  background-color: var(--color-accent);
+  color: var(--color-primary-dark);
+  padding: 10px 24px;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3);
+  transition: transform 0.2s;
+}
+
+.nav-btn-sell:hover {
+  transform: translateY(-2px);
+}
+
+/* --- FILE UPLOAD SECTION STYLES --- */
+.upload-container {
+  text-align: left;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #eee; /* A subtle separator line */
+}
+
+.upload-heading {
+  color: var(--color-primary);
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+.upload-subtext {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 25px;
+}
+
+/* Holds one label + input pair */
+.upload-group {
+  margin-bottom: 20px;
+}
+
+/* The label above the file input */
+.upload-label {
+  display: block; /* Forces it to its own line */
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-bottom: 8px;
+}
+
+/* Tweaking the standard auth-input just for files */
+input[type="file"].auth-input {
+  padding: 12px;
+  background-color: #f8f9fa;
+  height: auto; /* Lets it expand if the filename is long */
+  cursor: pointer;
+}
+
+/*FILE UPLOAD SECTION ENDS*/
+
+
+/* --- ADMIN DASHBOARD STYLES --- */
+.admin-page {
+  background-color: #f4f7f6;
+  min-height: 100vh;
+}
+
+.admin-container {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.admin-header h2 {
+  color: var(--color-primary-dark);
+  font-size: 28px;
+  margin-bottom: 5px;
+}
+
+.admin-header span {
+  color: var(--color-accent);
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+  margin-top: 30px;
+}
+
+.admin-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+
+.admin-card-header {
+  background-color: var(--color-primary);
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-card-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.badge.pending {
+  background-color: #f59e0b;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.admin-card-body {
+  padding: 20px;
+}
+
+.admin-card-body p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #444;
+}
+
+.admin-docs {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.admin-docs h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--color-primary);
+}
+
+.doc-link {
+  display: block;
+  color: #0056b3;
+  text-decoration: none;
+  font-size: 14px;
+  margin-bottom: 8px;
+  transition: color 0.2s;
+}
+
+.doc-link:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.admin-card-actions {
+  display: flex;
+  padding: 15px 20px;
+  background-color: #fafafa;
+  border-top: 1px solid #eee;
+  gap: 15px;
+}
+
+.btn-approve {
+  flex: 1;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.btn-approve:hover {
+  background-color: #059669;
+}
+
+.btn-reject {
+  flex: 1;
+  background-color: white;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.btn-reject:hover {
+  background-color: #fef2f2;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 50px;
+  background: white;
+  border-radius: 12px;
+  color: #666;
+  margin-top: 30px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+/* --- ADMIN DASHBOARD STYLES ENDS --- */
+
+/* --- LOGIN TOGGLE BUTTON --- */
+.auth-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary-dark);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 15px;
+  padding: 5px;
+  transition: color 0.2s;
+}
+
+.auth-toggle-btn:hover {
+  color: var(--color-accent);
+}
