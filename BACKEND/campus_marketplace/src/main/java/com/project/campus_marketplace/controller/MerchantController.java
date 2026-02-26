@@ -20,14 +20,15 @@ public class MerchantController {
     public ResponseEntity<String> applyForMerchant(
             @RequestParam("email") String email,
             @RequestParam("businessName") String businessName,
+            @RequestParam("mainProducts") String mainProducts, // New
             @RequestParam("whatsappNumber") String whatsappNumber,
             @RequestParam("bio") String bio,
             @RequestParam("idCard") MultipartFile idCard,
             @RequestParam("beaMembership") MultipartFile beaMembership,
-            @RequestParam("thirdDoc") MultipartFile thirdDoc) {
+            @RequestParam("selfieImage") MultipartFile selfieImage) { // Updated
 
         String result = applicationService.submitApplication(
-                email, businessName, whatsappNumber, bio, idCard, beaMembership, thirdDoc);
+                email, businessName, mainProducts, whatsappNumber, bio, idCard, beaMembership, selfieImage);
 
         if (result.startsWith("Error")) {
             return ResponseEntity.badRequest().body(result);

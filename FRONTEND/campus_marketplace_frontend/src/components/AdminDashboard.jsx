@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import Navbar from './Navbar';
+import { FiUsers, FiFileText, FiLogOut, FiGrid, FiSettings } from 'react-icons/fi';
 import '../App.css';
 
 export default function AdminDashboard() {
@@ -9,6 +9,9 @@ export default function AdminDashboard() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  
+  // NEW: State to hold the application currently being viewed in the modal
+  const [selectedApp, setSelectedApp] = useState(null);
 
   useEffect(() => {
     fetchApplications();
@@ -20,7 +23,7 @@ export default function AdminDashboard() {
       setApplications(response.data);
     } catch (error) {
       console.error("Error fetching applications:", error);
-      setMessage("Failed to load applications. Make sure you are logged in as an Admin.");
+      setMessage("Failed to load applications.");
     } finally {
       setLoading(false);
     }
@@ -30,84 +33,197 @@ export default function AdminDashboard() {
     try {
       const response = await axios.post(`http://localhost:8080/api/admin/applications/${id}/${action}`);
       setMessage(response.data);
-      // Refresh the list to remove the processed application
-      fetchApplications(); 
+      fetchApplications(); // Refresh the list
+      
+      // If the action was taken inside the modal, close the modal automatically
+      if (selectedApp && selectedApp.id === id) {
+        setSelectedApp(null);
+      }
     } catch (error) {
-      console.error(`Error trying to ${action} application:`, error);
-      setMessage(error.response?.data || `Failed to ${action} application.`);
+      console.error(`Error trying to ${action}:`, error);
+      setMessage(error.response?.data || `Failed to process application.`);
     }
   };
 
-  // Helper function to format the file URL correctly for the browser
   const getFileUrl = (path) => {
     if (!path) return '#';
-    // Ensure the path uses standard web slashes
-    const cleanPath = path.replace(/\\/g, '/');
-    return `http://localhost:8080/${cleanPath}`;
+    return `http://localhost:8080/${path.replace(/\\/g, '/')}`;
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('jwtToken');
+    navigate('/login');
   };
 
   return (
-    <div className="admin-page">
-      <Navbar />
-      
-      <div className="admin-container">
-        <div className="admin-header">
-          <h2>Admin <span>Dashboard</span></h2>
-          <p>Review and manage merchant applications</p>
+    <div className="admin-layout">
+      {/* --- SIDEBAR --- */}
+      <div className="admin-sidebar">
+        <div className="admin-brand" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px', padding: '20px' }}>
+          <div style={{ fontSize: '18px' }}>Babcock <span>Marketplace</span></div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: '600' }}>
+            Admin Dashboard
+          </div>
+        </div>
+        
+        <div className="admin-nav">
+          <div className="admin-nav-item active">
+            <FiFileText size={18} /> Merchant Requests
+          </div>
+          <div className="admin-nav-item" onClick={() => alert("Feature coming soon!")}>
+            <FiUsers size={18} /> User Management
+          </div>
+          <div className="admin-nav-item" onClick={() => alert("Feature coming soon!")}>
+            <FiGrid size={18} /> Active Listings
+          </div>
+          <div className="admin-nav-item" onClick={() => alert("Feature coming soon!")}>
+            <FiSettings size={18} /> Platform Settings
+          </div>
         </div>
 
-        {message && <div className="message-box success" style={{ marginBottom: '20px' }}>{message}</div>}
+        <div className="admin-logout">
+          <button onClick={handleLogout}>
+            <FiLogOut size={18} /> Logout
+          </button>
+        </div>
+      </div>
+
+      {/* --- MAIN CONTENT --- */}
+      <div className="admin-main">
+        <div className="admin-header">
+          <h2>Merchant <span>Approvals</span></h2>
+          <p>Review documents and upgrade student accounts to merchants. Click a row to view full details.</p>
+        </div>
+
+        {message && (
+          <div className="message-box success" style={{ marginBottom: '25px', maxWidth: '100%' }}>
+            {message}
+          </div>
+        )}
 
         {loading ? (
-          <p>Loading applications...</p>
+          <p>Loading pending applications...</p>
         ) : applications.length === 0 ? (
-          <div className="empty-state">No pending applications right now.</div>
+          <div className="empty-state">No pending merchant applications right now.</div>
         ) : (
-          <div className="admin-grid">
-            {applications.map((app) => (
-              <div key={app.id} className="admin-card">
-                <div className="admin-card-header">
-                  <h3>{app.businessName}</h3>
-                  <span className="badge pending">PENDING</span>
-                </div>
-                
-                <div className="admin-card-body">
-                  <p><strong>WhatsApp:</strong> {app.whatsappNumber}</p>
-                  <p><strong>Bio:</strong> {app.bio}</p>
-                  
-                  <div className="admin-docs">
-                    <h4>Attached Documents:</h4>
-                    <a href={getFileUrl(app.idCardPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
-                      📄 View ID Card
-                    </a>
-                    <a href={getFileUrl(app.beaMembershipPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
-                      📄 View BEA Membership
-                    </a>
-                    <a href={getFileUrl(app.thirdDocumentPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
-                      📄 View Supporting Doc
-                    </a>
-                  </div>
-                </div>
-
-                <div className="admin-card-actions">
-                  <button 
-                    onClick={() => handleAction(app.id, 'approve')} 
-                    className="btn-approve"
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Business Details</th>
+                  <th>Contact Info</th>
+                  <th>Uploaded Documents</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {applications.map((app) => (
+                  <tr 
+                    key={app.id} 
+                    className="clickable-row"
+                    onClick={() => setSelectedApp(app)} // Open modal on row click
                   >
-                    Approve Merchant
-                  </button>
-                  <button 
-                    onClick={() => handleAction(app.id, 'reject')} 
-                    className="btn-reject"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            ))}
+                    <td>
+                      <strong style={{ display: 'block', color: 'var(--color-primary)', fontSize: '15px' }}>
+                        {app.businessName}
+                      </strong>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>
+                        {app.bio.length > 50 ? app.bio.substring(0, 50) + '...' : app.bio}
+                      </span>
+                    </td>
+                    <td>{app.whatsappNumber}</td>
+                    <td>
+                      <div className="doc-links" onClick={(e) => e.stopPropagation()}> {/* Prevent row click when clicking links */}
+                        <a href={getFileUrl(app.idCardPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
+                          📄 Student ID
+                        </a>
+                        <a href={getFileUrl(app.beaMembershipPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
+                          📄 BEA Document
+                        </a>
+                        <a href={getFileUrl(app.thirdDocumentPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
+                          📄 Supporting File
+                        </a>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        {/* Notice e.stopPropagation() - this stops the row from clicking when you just want to approve/reject */}
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleAction(app.id, 'approve'); }} 
+                          className="btn-approve"
+                        >
+                          Approve
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleAction(app.id, 'reject'); }} 
+                          className="btn-reject"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
+
+      {/* --- MODAL OVERLAY --- */}
+      {selectedApp && (
+        <div className="modal-overlay" onClick={() => setSelectedApp(null)}>
+          {/* Prevent clicks inside the modal card from closing the overlay */}
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-card-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <h3>{selectedApp.businessName}</h3>
+                <span className="badge pending">PENDING</span>
+              </div>
+              <button 
+                className="modal-close-btn" 
+                onClick={() => setSelectedApp(null)}
+                title="Close"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="modal-card-body">
+              <p><strong>WhatsApp:</strong> {selectedApp.whatsappNumber}</p>
+              <p style={{ marginTop: '15px' }}><strong>Bio:</strong></p>
+              <p style={{ backgroundColor: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                {selectedApp.bio}
+              </p>
+              
+              <div className="modal-docs">
+                <h4>Attached Documents:</h4>
+                <div className="doc-links">
+                  <a href={getFileUrl(selectedApp.idCardPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
+                    📄 View ID Card
+                  </a>
+                  <a href={getFileUrl(selectedApp.beaMembershipPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
+                    📄 View BEA Membership
+                  </a>
+                  <a href={getFileUrl(selectedApp.thirdDocumentPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
+                    📄 View Supporting Doc
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-card-actions">
+              <button onClick={() => handleAction(selectedApp.id, 'approve')} className="btn-approve" style={{ flex: 1, padding: '12px' }}>
+                Approve Merchant
+              </button>
+              <button onClick={() => handleAction(selectedApp.id, 'reject')} className="btn-reject" style={{ flex: 1, padding: '12px' }}>
+                Reject
+              </button>
+            </div>
+            <div className="modal-close-hint">Click anywhere outside to close</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

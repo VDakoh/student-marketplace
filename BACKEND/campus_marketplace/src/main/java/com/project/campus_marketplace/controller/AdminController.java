@@ -1,5 +1,6 @@
 package com.project.campus_marketplace.controller;
 
+import com.project.campus_marketplace.dto.MerchantApplicationDTO;
 import com.project.campus_marketplace.model.MerchantApplication;
 import com.project.campus_marketplace.service.AdminService;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,7 @@ public class AdminController {
     }
 
     @GetMapping("/applications/pending")
-    public ResponseEntity<List<MerchantApplication>> getPendingApplications() {
+    public ResponseEntity<List<MerchantApplicationDTO>> getPendingApplications() {
         return ResponseEntity.ok(adminService.getPendingApplications());
     }
 

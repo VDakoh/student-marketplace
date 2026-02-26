@@ -30,8 +30,8 @@ public class MerchantApplication {
     @Column(name = "bea_membership_path")
     private String beaMembershipPath;
 
-    @Column(name = "third_document_path")
-    private String thirdDocumentPath;
+    @Column(name = "selfie_image_path")
+    private String selfieImagePath;
 
     // Status can be: PENDING, APPROVED, REJECTED
     @Column(nullable = false)
@@ -39,6 +39,11 @@ public class MerchantApplication {
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "main_products")
+    private String mainProducts;
+
+
 
     // --- Getters and Setters ---
     public Integer getId() { return id; }
@@ -62,12 +67,16 @@ public class MerchantApplication {
     public String getBeaMembershipPath() { return beaMembershipPath; }
     public void setBeaMembershipPath(String beaMembershipPath) { this.beaMembershipPath = beaMembershipPath; }
 
-    public String getThirdDocumentPath() { return thirdDocumentPath; }
-    public void setThirdDocumentPath(String thirdDocumentPath) { this.thirdDocumentPath = thirdDocumentPath; }
+    public String getSelfieImagePath() { return selfieImagePath; }
+    public void setSelfieImagePath(String thirdDocumentPath) { this.selfieImagePath = thirdDocumentPath; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getMainProducts() {return mainProducts;}
+
+    public void setMainProducts(String mainProducts) {this.mainProducts = mainProducts;}
 }

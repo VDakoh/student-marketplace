@@ -29,8 +29,8 @@ public class MerchantApplicationService {
         this.studentRepository = studentRepository;
     }
 
-    public String submitApplication(String email, String businessName, String whatsappNumber, String bio,
-                                    MultipartFile idCard, MultipartFile beaMembership, MultipartFile thirdDoc) {
+    public String submitApplication(String email, String businessName, String mainProducts, String whatsappNumber, String bio,
+                                    MultipartFile idCard, MultipartFile beaMembership, MultipartFile selfieImage) {
 
         Optional<Student> studentOpt = studentRepository.findByBabcockEmail(email.toLowerCase());
         if (studentOpt.isEmpty()) {
@@ -53,7 +53,7 @@ public class MerchantApplicationService {
             // 3. Save the files and get their paths
             String idCardPath = saveFile(idCard);
             String beaMembershipPath = saveFile(beaMembership);
-            String thirdDocPath = saveFile(thirdDoc);
+            String selfieImagePath = saveFile(selfieImage);
 
             // 4. Create and save the application record
             MerchantApplication application = new MerchantApplication();
@@ -61,9 +61,10 @@ public class MerchantApplicationService {
             application.setBusinessName(businessName);
             application.setWhatsappNumber(whatsappNumber);
             application.setBio(bio);
+            application.setMainProducts(mainProducts); // New field
             application.setIdCardPath(idCardPath);
             application.setBeaMembershipPath(beaMembershipPath);
-            application.setThirdDocumentPath(thirdDocPath);
+            application.setSelfieImagePath(selfieImagePath);
             // Status defaults to "PENDING" automatically from our model
 
             applicationRepository.save(application);

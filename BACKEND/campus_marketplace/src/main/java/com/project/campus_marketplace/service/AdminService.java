@@ -1,5 +1,6 @@
 package com.project.campus_marketplace.service;
 
+import com.project.campus_marketplace.dto.MerchantApplicationDTO;
 import com.project.campus_marketplace.model.MerchantApplication;
 import com.project.campus_marketplace.model.Student;
 import com.project.campus_marketplace.repository.MerchantApplicationRepository;
@@ -19,8 +20,29 @@ public class AdminService {
         this.studentRepository = studentRepository;
     }
 
-    public List<MerchantApplication> getPendingApplications() {
-        return appRepository.findByStatus("PENDING");
+    // Notice the return type is now List<MerchantApplicationDTO>
+    public List<MerchantApplicationDTO> getPendingApplications() {
+        List<MerchantApplication> apps = appRepository.findByStatus("PENDING");
+
+        return apps.stream().map(app -> {
+            MerchantApplicationDTO dto = new MerchantApplicationDTO();
+            dto.setId(app.getId());
+            dto.setBusinessName(app.getBusinessName());
+            dto.setMainProducts(app.getMainProducts());
+            dto.setWhatsappNumber(app.getWhatsappNumber());
+            dto.setBio(app.getBio());
+            dto.setIdCardPath(app.getIdCardPath());
+            dto.setBeaMembershipPath(app.getBeaMembershipPath());
+            dto.setSelfieImagePath(app.getSelfieImagePath());
+            dto.setStatus(app.getStatus());
+
+            // Fetch the student's full name from the Student table using their ID
+            studentRepository.findById(app.getStudentId()).ifPresent(student -> {
+                dto.setStudentFullName(student.getFullName());
+            });
+
+            return dto;
+        }).toList();
     }
 
     public String approveApplication(Integer applicationId) {
