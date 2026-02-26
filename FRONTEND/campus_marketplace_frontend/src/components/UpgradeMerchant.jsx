@@ -8,17 +8,19 @@ import logo from '../assets/images/image.png';
 export default function UpgradeMerchant() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
-  
+
   const [formData, setFormData] = useState({
     businessName: '',
+    mainProducts: '',
     whatsappNumber: '',
     bio: ''
   });
 
+  // Replaced thirdDoc with selfieImage
   const [files, setFiles] = useState({
     idCard: null,
     beaMembership: null,
-    thirdDoc: null
+    selfieImage: null
   });
 
   const [message, setMessage] = useState('');
@@ -56,11 +58,12 @@ export default function UpgradeMerchant() {
     const submitData = new FormData();
     submitData.append('email', email);
     submitData.append('businessName', formData.businessName);
+    submitData.append('mainProducts', formData.mainProducts);
     submitData.append('whatsappNumber', formData.whatsappNumber);
     submitData.append('bio', formData.bio);
     submitData.append('idCard', files.idCard);
     submitData.append('beaMembership', files.beaMembership);
-    submitData.append('thirdDoc', files.thirdDoc);
+    submitData.append('selfieImage', files.selfieImage);
 
     try {
       console.log("Sending files to Spring Boot...");
@@ -114,12 +117,19 @@ export default function UpgradeMerchant() {
             type="text" name="businessName" placeholder="Store or Business Name" 
             value={formData.businessName} onChange={handleTextChange} required className="auth-input"
           />
+
+          {/* NEW FIELD: Main Products */}
+          <input 
+            type="text" name="mainProducts" placeholder="Main Products/Services (e.g., Gadgets, Fashion)" 
+            value={formData.mainProducts} onChange={handleTextChange} required className="auth-input"
+          />
+
           <input 
             type="tel" name="whatsappNumber" placeholder="WhatsApp Contact Number" 
             value={formData.whatsappNumber} onChange={handleTextChange} required className="auth-input"
           />
           <textarea 
-            name="bio" placeholder="Tell us what you sell (Bio)" 
+            name="bio" placeholder="A brief description of what you sell" 
             value={formData.bio} onChange={handleTextChange} required className="auth-input"
             style={{ height: '80px', resize: 'none' }}
           />
@@ -133,7 +143,7 @@ export default function UpgradeMerchant() {
               <label className="upload-label">1. Student ID Card</label>
               <input 
                 type="file" name="idCard" onChange={handleFileChange} required 
-                className="auth-input" accept=".pdf,.jpg,.jpeg,.png"
+                className="auth-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
               />
             </div>
             
@@ -141,16 +151,13 @@ export default function UpgradeMerchant() {
               <label className="upload-label">2. BEA Membership Document</label>
               <input 
                 type="file" name="beaMembership" onChange={handleFileChange} required 
-                className="auth-input" accept=".pdf,.jpg,.jpeg,.png"
+                className="auth-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
               />
             </div>
 
             <div className="upload-group">
-              <label className="upload-label">3. Additional Supporting Document</label>
-              <input 
-                type="file" name="thirdDoc" onChange={handleFileChange} required 
-                className="auth-input" accept=".pdf,.jpg,.jpeg,.png"
-              />
+              <label className="upload-label">3. Selfie Image</label>
+              <input type="file" name="selfieImage" onChange={handleFileChange} required className="auth-input" accept=".jpg,.jpeg,.png"/>
             </div>
           </div>
           {/* --------------------------------------- */}

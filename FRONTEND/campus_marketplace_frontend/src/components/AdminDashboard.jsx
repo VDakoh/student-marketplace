@@ -118,48 +118,37 @@ export default function AdminDashboard() {
               </thead>
               <tbody>
                 {applications.map((app) => (
-                  <tr 
-                    key={app.id} 
-                    className="clickable-row"
-                    onClick={() => setSelectedApp(app)} // Open modal on row click
-                  >
+                  <tr key={app.id} className="clickable-row" onClick={() => setSelectedApp(app)}>
                     <td>
                       <strong style={{ display: 'block', color: 'var(--color-primary)', fontSize: '15px' }}>
                         {app.businessName}
                       </strong>
-                      <span style={{ fontSize: '12px', color: '#64748b' }}>
-                        {app.bio.length > 50 ? app.bio.substring(0, 50) + '...' : app.bio}
-                      </span>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                        <strong>Merchant:</strong> {app.studentFullName}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>
+                        <strong>Products:</strong> {app.mainProducts}
+                      </div>
                     </td>
                     <td>{app.whatsappNumber}</td>
                     <td>
-                      <div className="doc-links" onClick={(e) => e.stopPropagation()}> {/* Prevent row click when clicking links */}
+                      <div className="doc-links" onClick={(e) => e.stopPropagation()}>
                         <a href={getFileUrl(app.idCardPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
                           📄 Student ID
                         </a>
                         <a href={getFileUrl(app.beaMembershipPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
                           📄 BEA Document
                         </a>
-                        <a href={getFileUrl(app.thirdDocumentPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
-                          📄 Supporting File
+                        {/* UPDATED SELFIE LINK */}
+                        <a href={getFileUrl(app.selfieImagePath)} target="_blank" rel="noopener noreferrer" className="doc-link">
+                          📷 Selfie Image
                         </a>
                       </div>
                     </td>
                     <td>
                       <div className="action-buttons">
-                        {/* Notice e.stopPropagation() - this stops the row from clicking when you just want to approve/reject */}
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleAction(app.id, 'approve'); }} 
-                          className="btn-approve"
-                        >
-                          Approve
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleAction(app.id, 'reject'); }} 
-                          className="btn-reject"
-                        >
-                          Reject
-                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); handleAction(app.id, 'approve'); }} className="btn-approve">Approve</button>
+                        <button onClick={(e) => { e.stopPropagation(); handleAction(app.id, 'reject'); }} className="btn-reject">Reject</button>
                       </div>
                     </td>
                   </tr>
@@ -190,8 +179,13 @@ export default function AdminDashboard() {
             </div>
             
             <div className="modal-card-body">
+              {/* REQUESTED LABELS */}
+              <p><strong>Shop Name:</strong> {selectedApp.businessName}</p>
+              <p><strong>Name of Merchant:</strong> {selectedApp.studentFullName}</p>
               <p><strong>WhatsApp:</strong> {selectedApp.whatsappNumber}</p>
-              <p style={{ marginTop: '15px' }}><strong>Bio:</strong></p>
+              <p><strong>Main Products/Services:</strong> {selectedApp.mainProducts}</p>
+              
+              <p style={{ marginTop: '15px' }}><strong>Brief Description:</strong></p>
               <p style={{ backgroundColor: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                 {selectedApp.bio}
               </p>
@@ -205,8 +199,9 @@ export default function AdminDashboard() {
                   <a href={getFileUrl(selectedApp.beaMembershipPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
                     📄 View BEA Membership
                   </a>
-                  <a href={getFileUrl(selectedApp.thirdDocumentPath)} target="_blank" rel="noopener noreferrer" className="doc-link">
-                    📄 View Supporting Doc
+                  {/* UPDATED SELFIE LINK */}
+                  <a href={getFileUrl(selectedApp.selfieImagePath)} target="_blank" rel="noopener noreferrer" className="doc-link">
+                    📷 View Selfie Image
                   </a>
                 </div>
               </div>
