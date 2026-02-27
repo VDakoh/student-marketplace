@@ -46,4 +46,16 @@ public class MerchantProfileController {
         }
         return ResponseEntity.ok(result);
     }
+
+    @DeleteMapping("/remove-image")
+    public ResponseEntity<String> removeImage(
+            @RequestParam("email") String email,
+            @RequestParam("imageType") String imageType) {
+
+        String result = profileService.removeProfileImage(email, imageType);
+        if (result.startsWith("Error")) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
 }

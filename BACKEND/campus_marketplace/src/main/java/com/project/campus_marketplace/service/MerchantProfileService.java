@@ -4,8 +4,10 @@ import com.project.campus_marketplace.model.MerchantProfile;
 import com.project.campus_marketplace.model.Student;
 import com.project.campus_marketplace.repository.MerchantProfileRepository;
 import com.project.campus_marketplace.repository.StudentRepository;
+import io.jsonwebtoken.io.IOException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -118,5 +120,38 @@ public class MerchantProfileService {
         } catch (Exception e) {
             return "Error: Could not save image.";
         }
+    }
+
+    public String removeProfileImage(String email, String imageType) {
+        Student student = studentRepository.findByBabcockEmail(email).orElse(null);
+        if (student == null) return "Error: User not found.";
+
+        MerchantProfile profile = profileRepository.findByStudentId(student.getId()).orElse(null);
+        if (profile == null) return "Error: Profile not found.";
+
+        String pathToRemove = null;
+        if ("logo".equalsIgnoreCase(imageType)) {
+            pathToRemove = profile.getLogoPath();
+            profile.setLogoPath(null); // Clear DB reference
+        } else if ("banner".equalsIgnoreCase(imageType)) {
+            pathToRemove = profile.getBannerPath();
+            profile.setBannerPath(null); // Clear DB reference
+        }
+
+        // If there's a file, delete it from disk
+        if (pathToRemove != null) {
+            try {
+                // Convert URL path (uploads/file.jpg) back to system file path
+                Path filePath = Paths.get(pathToRemove);
+                Files.deleteIfExists(filePath);
+            } catch (IOException | java.io.IOException e) {
+                System.err.println("Warning: Could not delete file from disk: " + pathToRemove);
+                // We still continue to save the DB change even if disk deletion fails
+            }
+        }
+
+        profile.setUpdatedAt(LocalDateTime.now());
+        profileRepository.save(profile);
+        return "Success: Image removed.";
     }
 }
