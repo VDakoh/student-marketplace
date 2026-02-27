@@ -21,8 +21,8 @@ public class AdminService {
     }
 
     // Notice the return type is now List<MerchantApplicationDTO>
-    public List<MerchantApplicationDTO> getPendingApplications() {
-        List<MerchantApplication> apps = appRepository.findByStatus("PENDING");
+    public List<MerchantApplicationDTO> getApplicationsByStatus(String status) {
+        List<MerchantApplication> apps = appRepository.findByStatus(status.toUpperCase());
 
         return apps.stream().map(app -> {
             MerchantApplicationDTO dto = new MerchantApplicationDTO();
@@ -35,10 +35,16 @@ public class AdminService {
             dto.setBeaMembershipPath(app.getBeaMembershipPath());
             dto.setSelfieImagePath(app.getSelfieImagePath());
             dto.setStatus(app.getStatus());
+            dto.setStudentId(app.getStudentId());
 
-            // Fetch the student's full name from the Student table using their ID
+            // New Fields
+            dto.setRejectionReason(app.getRejectionReason());
+            dto.setCreatedAt(app.getCreatedAt().toString());
+
+            // Fetch student name and their total application count
             studentRepository.findById(app.getStudentId()).ifPresent(student -> {
                 dto.setStudentFullName(student.getFullName());
+                dto.setTotalApplicationsByUser(appRepository.countByStudentId(student.getId()));
             });
 
             return dto;
@@ -49,27 +55,34 @@ public class AdminService {
         MerchantApplication app = appRepository.findById(applicationId).orElse(null);
         if (app == null) return "Error: Application not found.";
 
-        // 1. Upgrade the user's role
-        Student student = studentRepository.findById(app.getStudentId()).orElse(null);
-        if (student != null) {
-            student.setRole("MERCHANT");
-            studentRepository.save(student);
-        }
-
-        // 2. Mark the application as approved
+        // We ONLY update the application status now. The user upgrades themselves later.
         app.setStatus("APPROVED");
         appRepository.save(app);
 
-        return "Success: Application approved. User is now a Merchant!";
+        return "Success: Application approved. User notified to complete setup.";
     }
 
-    public String rejectApplication(Integer applicationId) {
+    public String rejectApplication(Integer applicationId, String reason) {
         MerchantApplication app = appRepository.findById(applicationId).orElse(null);
         if (app == null) return "Error: Application not found.";
 
         app.setStatus("REJECTED");
+        app.setRejectionReason(reason); // Save the admin's specific reason
         appRepository.save(app);
 
         return "Success: Application rejected.";
+    }
+
+    public List<MerchantApplicationDTO> getStudentApplicationHistory(Integer studentId) {
+        List<MerchantApplication> history = appRepository.findByStudentIdOrderByCreatedAtDesc(studentId);
+        return history.stream().map(app -> {
+            MerchantApplicationDTO dto = new MerchantApplicationDTO();
+            dto.setId(app.getId());
+            dto.setStatus(app.getStatus());
+            dto.setMainProducts(app.getMainProducts());
+            dto.setRejectionReason(app.getRejectionReason());
+            dto.setCreatedAt(app.getCreatedAt().toString());
+            return dto;
+        }).toList();
     }
 }

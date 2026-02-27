@@ -11,6 +11,10 @@ public class MerchantApplicationDTO {
     private String selfieImagePath; // Renamed from thirdDocument
     private String status;
     private String mainProducts;
+    private String rejectionReason;
+    private String createdAt; // Sending as a string makes it easier for React to display
+    private long totalApplicationsByUser;
+    private Integer studentId;
 
 
     // Getters and Setters for all fields
@@ -43,4 +47,16 @@ public class MerchantApplicationDTO {
 
     public String getMainProducts() { return mainProducts; }
     public void setMainProducts(String mainProducts) { this.mainProducts = mainProducts; }
+
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
+
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public long getTotalApplicationsByUser() { return totalApplicationsByUser; }
+    public void setTotalApplicationsByUser(long totalApplicationsByUser) { this.totalApplicationsByUser = totalApplicationsByUser; }
+
+    public Integer getStudentId() { return studentId; }
+    public void setStudentId(Integer studentId) { this.studentId = studentId; }
 }

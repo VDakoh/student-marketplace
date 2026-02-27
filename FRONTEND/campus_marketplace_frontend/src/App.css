@@ -327,6 +327,10 @@ body {
   transform: translateY(-2px);
 }
 
+
+
+
+
 /* --- FILE UPLOAD SECTION STYLES --- */
 .upload-container {
   text-align: left;
@@ -371,6 +375,14 @@ input[type="file"].auth-input {
 }
 
 /*FILE UPLOAD SECTION ENDS*/
+
+
+
+
+
+
+
+
 
 
 /* --- ENTERPRISE ADMIN DASHBOARD STYLES --- */
@@ -587,6 +599,11 @@ input[type="file"].auth-input {
 /* --- ENTERPRISE ADMIN DASHBOARD STYLES ENDS --- */
 
 
+
+
+
+
+
 /* --- LOGIN TOGGLE BUTTON --- */
 .auth-toggle-btn {
   background: none;
@@ -606,6 +623,12 @@ input[type="file"].auth-input {
 }
 
 /* --- LOGIN TOGGLE BUTTON ENDS--- */
+
+
+
+
+
+
 
 /* --- MODAL & CLICKABLE TABLE STYLES --- */
 .clickable-row {
@@ -735,3 +758,320 @@ input[type="file"].auth-input {
 }
 
 /* --- MODAL & CLICKABLE TABLE STYLES ENDS --- */
+
+
+
+
+
+/* --- NESTED TABS & CRM STYLES --- */
+.admin-subnav {
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.admin-subnav-item {
+  padding: 12px 25px 12px 45px; /* Indented to show nesting */
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  border-left: 4px solid transparent;
+  transition: all 0.2s;
+}
+
+.admin-subnav-item:hover, .admin-subnav-item.active {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-left-color: var(--color-accent);
+}
+
+.reject-textarea {
+  width: 100%;
+  height: 90px;
+  padding: 10px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  resize: none;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.history-link {
+  color: #94a3b8;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+  display: inline-block;
+  margin-top: 6px;
+  transition: color 0.2s;
+}
+
+.history-link:hover {
+  color: var(--color-primary);
+}
+
+.badge.approved { background-color: #10b981; color: white; }
+.badge.rejected { background-color: #ef4444; color: white; }
+
+/* --- NESTED TABS & CRM STYLES ENDS --- */
+
+
+
+
+
+
+
+/* --- USER PROFILE DASHBOARD STYLES --- */
+.user-layout {
+  display: flex;
+  min-height: calc(100vh - 70px); /* Assuming navbar is ~70px */
+  background-color: #f8fafc;
+}
+
+.user-sidebar {
+  width: 250px;
+  background-color: white;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 20px;
+}
+
+.user-nav-item {
+  padding: 15px 25px;
+  color: #64748b;
+  font-weight: 600;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-nav-item:hover {
+  background-color: #f1f5f9;
+  color: var(--color-primary-dark);
+}
+
+.user-nav-item.active {
+  background-color: #eff6ff;
+  color: var(--color-primary);
+  border-left-color: var(--color-primary);
+}
+
+.user-nav-bottom {
+  margin-top: auto;
+  padding-bottom: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.user-main {
+  flex: 1;
+  padding: 40px;
+  max-width: 900px;
+}
+
+/* Application Status Banners & Cards */
+.status-banner {
+  padding: 15px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+.status-banner.review {
+  background-color: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.status-card {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.status-card h3 {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.status-card.approved h3 { color: #10b981; }
+.status-card.rejected h3 { color: #ef4444; }
+
+/* Read Only Form State */
+.form-readonly {
+  opacity: 0.6;
+  pointer-events: none; /* Prevents clicking or typing */
+  filter: grayscale(20%);
+}
+
+.history-stats {
+  background: #f1f5f9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* --- USER PROFILE DASHBOARD STYLES ENDS --- */
+
+
+
+
+
+
+
+
+
+
+/* --- PROFILE DASHBOARD FORM STYLES --- */
+.profile-card {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+  max-width: 800px;
+}
+
+.profile-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.profile-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-form-group.full-width {
+  grid-column: span 2;
+}
+
+.profile-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #f8fafc;
+  transition: all 0.2s;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.profile-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+textarea.profile-input {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.profile-file-upload {
+  border: 1px dashed #cbd5e1;
+  padding: 15px 20px;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-file-upload input[type="file"] {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.profile-submit-btn {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 16px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+  margin-top: 10px;
+}
+
+.profile-submit-btn:hover {
+  background-color: var(--color-primary-dark);
+}
+
+/* Ensure the grid stacks nicely on mobile devices */
+@media (max-width: 768px) {
+  .profile-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .profile-form-group.full-width {
+    grid-column: span 1;
+  }
+}
+
+/* --- PROFILE DASHBOARD FORM STYLES ENDS --- */
+
+
+
+
+
+/* --- CELEBRATION MODAL BUTTON --- */
+.congrats-close-btn {
+  background-color: var(--color-primary); /* Blue */
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.congrats-close-btn:hover {
+  background-color: var(--color-accent); /* Gold */
+  color: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* --- CELEBRATION MODAL BUTTON ENDS --- */
+
+
+
+
+
+
+

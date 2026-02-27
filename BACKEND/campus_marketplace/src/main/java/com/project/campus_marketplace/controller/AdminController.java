@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -18,9 +19,9 @@ public class AdminController {
         this.adminService = adminService;
     }
 
-    @GetMapping("/applications/pending")
-    public ResponseEntity<List<MerchantApplicationDTO>> getPendingApplications() {
-        return ResponseEntity.ok(adminService.getPendingApplications());
+    @GetMapping("/applications/{status}")
+    public ResponseEntity<List<MerchantApplicationDTO>> getApplicationsByStatus(@PathVariable String status) {
+        return ResponseEntity.ok(adminService.getApplicationsByStatus(status));
     }
 
     @PostMapping("/applications/{id}/approve")
@@ -33,7 +34,13 @@ public class AdminController {
     }
 
     @PostMapping("/applications/{id}/reject")
-    public ResponseEntity<String> rejectApplication(@PathVariable Integer id) {
-        return ResponseEntity.ok(adminService.rejectApplication(id));
+    public ResponseEntity<String> rejectApplication(@PathVariable Integer id, @RequestBody Map<String, String> payload) {
+        String reason = payload.getOrDefault("reason", "No reason provided.");
+        return ResponseEntity.ok(adminService.rejectApplication(id, reason));
+    }
+
+    @GetMapping("/applications/history/{studentId}")
+    public ResponseEntity<List<MerchantApplicationDTO>> getApplicationHistory(@PathVariable Integer studentId) {
+        return ResponseEntity.ok(adminService.getStudentApplicationHistory(studentId));
     }
 }

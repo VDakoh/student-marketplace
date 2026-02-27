@@ -1,8 +1,11 @@
 package com.project.campus_marketplace.service;
 
+import com.project.campus_marketplace.dto.MerchantApplicationDTO;
 import com.project.campus_marketplace.model.MerchantApplication;
+import com.project.campus_marketplace.model.MerchantProfile;
 import com.project.campus_marketplace.model.Student;
 import com.project.campus_marketplace.repository.MerchantApplicationRepository;
+import com.project.campus_marketplace.repository.MerchantProfileRepository;
 import com.project.campus_marketplace.repository.StudentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,21 +15,26 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+
 
 @Service
 public class MerchantApplicationService {
 
     private final MerchantApplicationRepository applicationRepository;
     private final StudentRepository studentRepository;
+    private final MerchantProfileRepository profileRepository;
 
     // The folder where files will be saved on your computer
     private final String UPLOAD_DIR = "uploads/merchant_docs/";
 
-    public MerchantApplicationService(MerchantApplicationRepository applicationRepository, StudentRepository studentRepository) {
+    public MerchantApplicationService(MerchantApplicationRepository applicationRepository, StudentRepository studentRepository, MerchantProfileRepository profileRepository) {
         this.applicationRepository = applicationRepository;
         this.studentRepository = studentRepository;
+        this.profileRepository = profileRepository;
     }
 
     public String submitApplication(String email, String businessName, String mainProducts, String whatsappNumber, String bio,
@@ -95,4 +103,61 @@ public class MerchantApplicationService {
 
         return filePath.toString();
     }
+
+    // Make sure to import com.project.campus_marketplace.dto.MerchantApplicationDTO;
+
+    public List<MerchantApplicationDTO> getMyApplications(String email) {
+        Student student = studentRepository.findByBabcockEmail(email).orElse(null);
+        if (student == null) return List.of(); // Return empty list if not found
+
+        // Fetch all applications ordered by newest first
+        List<MerchantApplication> apps = applicationRepository.findByStudentIdOrderByCreatedAtDesc(student.getId());
+
+        return apps.stream().map(app -> {
+            MerchantApplicationDTO dto = new MerchantApplicationDTO();
+            dto.setId(app.getId());
+            dto.setBusinessName(app.getBusinessName());
+            dto.setMainProducts(app.getMainProducts());
+            dto.setWhatsappNumber(app.getWhatsappNumber());
+            dto.setBio(app.getBio());
+            dto.setStatus(app.getStatus());
+            dto.setRejectionReason(app.getRejectionReason());
+            dto.setCreatedAt(app.getCreatedAt().toString());
+            return dto;
+        }).toList();
+    }
+
+    public String completeSetup(String email) {
+        Student student = studentRepository.findByBabcockEmail(email).orElse(null);
+        if (student == null) return "Error: Student not found.";
+
+        // Find their approved application
+        MerchantApplication app = applicationRepository.findByStudentIdAndStatus(student.getId(), "APPROVED").orElse(null);
+        if (app == null) return "Error: No approved application found.";
+
+        // 1. Upgrade the user's role to MERCHANT
+        student.setRole("MERCHANT");
+        studentRepository.save(student);
+
+        // 2. Initialize their official Merchant Profile! (Phase 2 Prep)
+        if (profileRepository.findByStudentId(student.getId()).isEmpty()) {
+            MerchantProfile profile = new MerchantProfile();
+            profile.setStudentId(student.getId());
+            profile.setBusinessName(app.getBusinessName());
+            profile.setMerchantName(student.getFullName());
+            profile.setMainProducts(app.getMainProducts());
+
+            // Tagline has a 150 char strict limit in our DB, so we trim the bio if necessary
+            String tagline = app.getBio().length() > 147 ? app.getBio().substring(0, 147) + "..." : app.getBio();
+            profile.setTagline(tagline);
+
+            profile.setDescription(app.getBio());
+            profile.setPublicPhone(app.getWhatsappNumber());
+
+            profileRepository.save(profile);
+        }
+
+        return "Success: Setup complete. User is now a Merchant.";
+    }
 }
+
