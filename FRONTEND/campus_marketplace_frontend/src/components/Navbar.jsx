@@ -96,7 +96,7 @@ export default function Navbar() {
           {userRole === 'BUYER' ? (
             <Link to="/profile" className="nav-btn-sell">BECOME A MERCHANT</Link>
           ) : (
-            <Link to="/merchant-profile" className="nav-btn-sell" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Link to="/profile" className="nav-btn-sell" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <FaStore /> MY SHOP
             </Link>
           )}

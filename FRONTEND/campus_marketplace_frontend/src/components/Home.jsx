@@ -41,7 +41,7 @@ export default function Home() {
               className="congrats-close-btn"
               onClick={() => setShowCongrats(false)}
             >
-              Take me to my Dashboard
+              Close
             </button>
           </div>
         </div>

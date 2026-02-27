@@ -5,8 +5,14 @@ import com.project.campus_marketplace.model.Student;
 import com.project.campus_marketplace.repository.MerchantProfileRepository;
 import com.project.campus_marketplace.repository.StudentRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 public class MerchantProfileService {
@@ -73,5 +79,44 @@ public class MerchantProfileService {
 
         profileRepository.save(existingProfile);
         return "Success: Profile updated successfully.";
+    }
+
+    // The new Image Upload Method
+    public String uploadProfileImage(String email, MultipartFile file, String imageType) {
+        Student student = studentRepository.findByBabcockEmail(email).orElse(null);
+        if (student == null) return "Error: User not found.";
+
+        MerchantProfile profile = profileRepository.findByStudentId(student.getId()).orElse(null);
+        if (profile == null) return "Error: Profile not found.";
+
+        try {
+            // Create a specific folder for merchant profile images
+            String uploadDir = "uploads/merchant_profiles/";
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Generate a unique file name so images don't overwrite each other
+            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            String fileUrl = uploadDir + fileName;
+
+            // Update the specific column in the database
+            if ("logo".equalsIgnoreCase(imageType)) {
+                profile.setLogoPath(fileUrl);
+            } else if ("banner".equalsIgnoreCase(imageType)) {
+                profile.setBannerPath(fileUrl);
+            }
+
+            profile.setUpdatedAt(LocalDateTime.now());
+            profileRepository.save(profile);
+
+            return fileUrl; // Return the new path to React
+        } catch (Exception e) {
+            return "Error: Could not save image.";
+        }
     }
 }
