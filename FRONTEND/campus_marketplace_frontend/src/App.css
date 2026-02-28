@@ -1678,3 +1678,133 @@ textarea.profile-input {
 
 
 
+
+
+/* --- MERCHANT PRODUCTS INVENTORY STYLES --- */
+/* --- MERCHANT PRODUCTS INVENTORY STYLES --- */
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.btn-add-product {
+  background-color: var(--color-primary);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s;
+}
+
+.btn-add-product:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.inventory-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inventory-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+.inventory-image-placeholder {
+  height: 160px;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.inventory-details {
+  padding: 15px;
+}
+
+.inventory-title {
+  margin: 0 0 5px 0;
+  font-size: 15px;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inventory-price {
+  font-weight: bold;
+  color: var(--color-primary);
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.inventory-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: bold;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 10px;
+}
+
+/* --- MERCHANT PRODUCTS INVENTORY STYLES ENDS --- */
+
+
+
+
+
+/* --- PRODUCT MODAL STYLES --- */
+.product-image-upload-zone {
+  width: 100%;
+  height: 200px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: #f8fafc;
+  transition: all 0.2s;
+  overflow: hidden;
+  position: relative;
+}
+
+.product-image-upload-zone:hover {
+  border-color: var(--color-primary);
+  background-color: #f1f5f9;
+}
+
+.product-image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* --- PRODUCT MODAL STYLES ENDS --- */
+
+
+
+
+
