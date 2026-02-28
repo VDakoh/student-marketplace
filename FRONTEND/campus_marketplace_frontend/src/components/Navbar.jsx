@@ -103,7 +103,7 @@ export default function Navbar() {
             <Link to="/profile?tab=merchant" className="nav-btn-sell">BECOME A MERCHANT</Link>
           ) : (
             <Link to="/profile?tab=merchant" className="nav-btn-sell" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <FaStore /> MY SHOP
+              <FaStore /> MERCHANT DASHBOARD
             </Link>
           )}
         </div>

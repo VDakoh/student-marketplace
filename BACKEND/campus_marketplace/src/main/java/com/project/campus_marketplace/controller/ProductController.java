@@ -18,7 +18,7 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
-    // POST /api/products : Add a new product (Updated for Taxonomy)
+    // POST /api/products : Add a new product
     @PostMapping
     public ResponseEntity<?> createProduct(
             @RequestParam("email") String email,
@@ -31,30 +31,66 @@ public class ProductController {
             @RequestParam(value = "customCategory", required = false) String customCategory,
             @RequestParam(value = "itemCondition", required = false) String itemCondition,
             @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
-            @RequestParam(value = "image", required = false) MultipartFile image) {
+            @RequestParam(value = "images", required = false) List<MultipartFile> images) {
 
         try {
             Product newProduct = productService.addProduct(
                     email, title, description, price, listingType, subType, category,
-                    customCategory, itemCondition, stockQuantity, image);
+                    customCategory, itemCondition, stockQuantity, images);
             return ResponseEntity.ok(newProduct);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error creating product: " + e.getMessage());
         }
     }
 
-    // GET /api/products/merchant : Get products for the logged-in merchant
+    // PUT /api/products/{id} : Edit an existing product
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateProduct(
+            @PathVariable Integer id,
+            @RequestParam("email") String email,
+            @RequestParam("title") String title,
+            @RequestParam("description") String description,
+            @RequestParam("price") BigDecimal price,
+            @RequestParam("listingType") String listingType,
+            @RequestParam("subType") String subType,
+            @RequestParam("category") String category,
+            @RequestParam(value = "customCategory", required = false) String customCategory,
+            @RequestParam(value = "itemCondition", required = false) String itemCondition,
+            @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images) {
+
+        try {
+            Product updatedProduct = productService.updateProduct(
+                    id, email, title, description, price, listingType, subType, category,
+                    customCategory, itemCondition, stockQuantity, images);
+            return ResponseEntity.ok(updatedProduct);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error updating product: " + e.getMessage());
+        }
+    }
+
+    // DELETE /api/products/{id} : Delete a product
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProduct(
+            @PathVariable Integer id,
+            @RequestParam("email") String email) {
+        try {
+            productService.deleteProduct(id, email);
+            return ResponseEntity.ok("Product deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error deleting product: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/merchant")
     public ResponseEntity<?> getMerchantProducts(@RequestParam("email") String email) {
         try {
-            List<Product> products = productService.getMerchantProducts(email);
-            return ResponseEntity.ok(products);
+            return ResponseEntity.ok(productService.getMerchantProducts(email));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error fetching products.");
         }
     }
 
-    // GET /api/products : Get all active products
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllActiveProducts());

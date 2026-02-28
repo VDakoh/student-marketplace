@@ -68,7 +68,7 @@ export default function UpgradeMerchant() {
     try {
       console.log("Sending files to Spring Boot...");
       
-      const response = await axios.post('http://localhost:8080/api/merchant/apply', submitData, {
+      const response = await axios.post('http://localhost:8081/api/merchant/apply', submitData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       

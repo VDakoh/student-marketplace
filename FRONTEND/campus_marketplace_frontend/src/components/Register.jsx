@@ -20,7 +20,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:8080/api/auth/register', formData);
+      const response = await axios.post('http://localhost:8081/api/auth/register', formData);
       setMessage(response.data);
       setIsError(false);
       setFormData({ email: '', fullName: '', password: '' }); 

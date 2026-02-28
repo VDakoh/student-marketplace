@@ -28,6 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/merchant/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll() // <-- ADD THIS
                         .requestMatchers("/uploads/**").permitAll()   // <-- ADD THIS
+                        .requestMatchers("/api/products/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 );

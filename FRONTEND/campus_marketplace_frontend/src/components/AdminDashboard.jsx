@@ -28,7 +28,7 @@ export default function AdminDashboard() {
   const fetchApplications = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:8080/api/admin/applications/${activeTab}`);
+      const response = await axios.get(`http://localhost:8081/api/admin/applications/${activeTab}`);
       setApplications(response.data);
     } catch (error) {
       console.error("Error fetching applications:", error);
@@ -40,7 +40,7 @@ export default function AdminDashboard() {
 
   const handleApprove = async (id) => {
     try {
-      const response = await axios.post(`http://localhost:8080/api/admin/applications/${id}/approve`);
+      const response = await axios.post(`http://localhost:8081/api/admin/applications/${id}/approve`);
       setMessage(response.data);
       if (selectedApp?.id === id) setSelectedApp(null);
       fetchApplications();
@@ -53,7 +53,7 @@ export default function AdminDashboard() {
     if (!rejectReason.trim()) return alert("Please provide a reason for rejection.");
     
     try {
-      const response = await axios.post(`http://localhost:8080/api/admin/applications/${rejectingApp.id}/reject`, {
+      const response = await axios.post(`http://localhost:8081/api/admin/applications/${rejectingApp.id}/reject`, {
         reason: rejectReason
       });
       setMessage(response.data);
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
 
   const fetchHistory = async (studentId) => {
     try {
-      const response = await axios.get(`http://localhost:8080/api/admin/applications/history/${studentId}`);
+      const response = await axios.get(`http://localhost:8081/api/admin/applications/history/${studentId}`);
       setHistoryData(response.data);
       setShowHistoryModal(true);
     } catch (error) {
@@ -76,7 +76,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const getFileUrl = (path) => path ? `http://localhost:8080/${path.replace(/\\/g, '/')}` : '#';
+  const getFileUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : '#';
 
   const handleLogout = () => {
     localStorage.removeItem('jwtToken');

@@ -28,8 +28,8 @@ export default function Login() {
 
     // Dynamically choose the endpoint based on the toggle state
     const endpoint = isAdminLogin 
-      ? 'http://localhost:8080/api/auth/admin/login' 
-      : 'http://localhost:8080/api/auth/login';
+      ? 'http://localhost:8081/api/auth/admin/login' 
+      : 'http://localhost:8081/api/auth/login';
 
     try {
       const response = await axios.post(endpoint, formData);

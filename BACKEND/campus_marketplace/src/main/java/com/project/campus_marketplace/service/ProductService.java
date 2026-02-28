@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,12 +26,11 @@ public class ProductService {
     @Autowired
     private StudentRepository studentRepository;
 
-    // 1. ADD A NEW PRODUCT (Updated with Taxonomy Engine)
+    // 1. ADD NEW PRODUCT (Multi-Image Support)
     public Product addProduct(String email, String title, String description, BigDecimal price,
                               String listingType, String subType, String category, String customCategory,
-                              String itemCondition, Integer stockQuantity, MultipartFile imageFile) throws Exception {
+                              String itemCondition, Integer stockQuantity, List<MultipartFile> images) throws Exception {
 
-        // Using the correct Babcock lookup method!
         Student merchant = studentRepository.findByBabcockEmail(email)
                 .orElseThrow(() -> new Exception("Merchant not found"));
 
@@ -39,44 +39,104 @@ public class ProductService {
         product.setTitle(title);
         product.setDescription(description);
         product.setPrice(price);
-
-        // Injecting the new taxonomy fields
         product.setListingType(listingType);
         product.setSubType(subType);
         product.setCategory(category);
         product.setCustomCategory(customCategory);
-
-        // These can gracefully be null if the listingType is "SERVICE"
         product.setItemCondition(itemCondition);
         product.setStockQuantity(stockQuantity);
 
-        // Handle Image Upload if provided
-        if (imageFile != null && !imageFile.isEmpty()) {
+        // Handle Array of Images
+        if (images != null && !images.isEmpty()) {
+            List<String> savedImagePaths = new ArrayList<>();
             String uploadDir = "uploads/products/";
             Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+
+            for (MultipartFile img : images) {
+                if (!img.isEmpty()) {
+                    String fileName = UUID.randomUUID().toString() + "_" + img.getOriginalFilename();
+                    Path filePath = uploadPath.resolve(fileName);
+                    Files.copy(img.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                    savedImagePaths.add(uploadDir + fileName);
+                }
             }
-
-            String fileName = UUID.randomUUID().toString() + "_" + imageFile.getOriginalFilename();
-            Path filePath = uploadPath.resolve(fileName);
-            Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-            product.setImagePath(uploadDir + fileName);
+            product.setImagePaths(savedImagePaths);
         }
 
         return productRepository.save(product);
     }
 
-    // 2. GET ALL PRODUCTS FOR A SPECIFIC MERCHANT
-    public List<Product> getMerchantProducts(String email) throws Exception {
+    // 2. EDIT EXISTING PRODUCT
+    public Product updateProduct(Integer productId, String email, String title, String description, BigDecimal price,
+                                 String listingType, String subType, String category, String customCategory,
+                                 String itemCondition, Integer stockQuantity, List<MultipartFile> newImages) throws Exception {
+
         Student merchant = studentRepository.findByBabcockEmail(email)
                 .orElseThrow(() -> new Exception("Merchant not found"));
 
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new Exception("Product not found"));
+
+        // Security Check: Only the owner can edit this product
+        if (!product.getMerchantId().equals(merchant.getId())) {
+            throw new Exception("Unauthorized to edit this product");
+        }
+
+        // Update Fields
+        product.setTitle(title);
+        product.setDescription(description);
+        product.setPrice(price);
+        product.setListingType(listingType);
+        product.setSubType(subType);
+        product.setCategory(category);
+        product.setCustomCategory(customCategory);
+        product.setItemCondition(itemCondition);
+        product.setStockQuantity(stockQuantity);
+
+        // Append new images if provided
+        if (newImages != null && !newImages.isEmpty()) {
+            String uploadDir = "uploads/products/";
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+
+            List<String> currentPaths = product.getImagePaths();
+            for (MultipartFile img : newImages) {
+                if (!img.isEmpty()) {
+                    String fileName = UUID.randomUUID().toString() + "_" + img.getOriginalFilename();
+                    Path filePath = uploadPath.resolve(fileName);
+                    Files.copy(img.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                    currentPaths.add(uploadDir + fileName);
+                }
+            }
+            product.setImagePaths(currentPaths);
+        }
+
+        return productRepository.save(product);
+    }
+
+    // 3. DELETE PRODUCT
+    public void deleteProduct(Integer productId, String email) throws Exception {
+        Student merchant = studentRepository.findByBabcockEmail(email)
+                .orElseThrow(() -> new Exception("Merchant not found"));
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new Exception("Product not found"));
+
+        if (!product.getMerchantId().equals(merchant.getId())) {
+            throw new Exception("Unauthorized to delete this product");
+        }
+
+        productRepository.delete(product);
+    }
+
+    // GET METHODS
+    public List<Product> getMerchantProducts(String email) throws Exception {
+        Student merchant = studentRepository.findByBabcockEmail(email)
+                .orElseThrow(() -> new Exception("Merchant not found"));
         return productRepository.findByMerchantIdOrderByCreatedAtDesc(merchant.getId());
     }
 
-    // 3. GET ALL ACTIVE PRODUCTS (For the main marketplace feed)
     public List<Product> getAllActiveProducts() {
         return productRepository.findByStatusOrderByCreatedAtDesc("ACTIVE");
     }

@@ -3,6 +3,8 @@ package com.project.campus_marketplace.model;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -12,7 +14,6 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // Links this product directly to the merchant's Student ID
     @Column(nullable = false)
     private Integer merchantId;
 
@@ -25,34 +26,36 @@ public class Product {
     @Column(nullable = false)
     private BigDecimal price;
 
-    // --- NEW TAXONOMY ENGINE ---
+    @Column(nullable = false)
+    private String listingType;
 
     @Column(nullable = false)
-    private String listingType; // "ITEM" or "SERVICE"
+    private String subType;
 
     @Column(nullable = false)
-    private String subType; // e.g., "Electronics & Gadgets", "Tech & Programming"
+    private String category;
 
-    @Column(nullable = false)
-    private String category; // e.g., "Phones & Tablets", "Web Development"
-
-    // Only populated if the user selects "Other..." in the category dropdown
     private String customCategory;
+    private String itemCondition;
+    private Integer stockQuantity;
 
-    // --- NULLABLE FIELDS (Because Services do not use these) ---
-    private String itemCondition; // e.g., New, Used - Good (Null for Services)
+    // --- MULTI-IMAGE ENGINE ---
+    @ElementCollection
+    @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "image_path")
+    private List<String> imagePaths = new ArrayList<>();
 
-    private Integer stockQuantity; // (Null or conceptually infinite for Services)
-
-    private String imagePath; // Path to the uploaded product image
-
-    private String status = "ACTIVE"; // ACTIVE, PAUSED, SOLD_OUT
-
+    private String status = "ACTIVE";
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-
     // --- GETTERS AND SETTERS ---
+
+    // Fake getter so the React grid doesn't break when looking for a single thumbnail!
+    @Transient
+    public String getImagePath() {
+        return (imagePaths != null && !imagePaths.isEmpty()) ? imagePaths.get(0) : null;
+    }
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -87,8 +90,8 @@ public class Product {
     public Integer getStockQuantity() { return stockQuantity; }
     public void setStockQuantity(Integer stockQuantity) { this.stockQuantity = stockQuantity; }
 
-    public String getImagePath() { return imagePath; }
-    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
+    public List<String> getImagePaths() { return imagePaths; }
+    public void setImagePaths(List<String> imagePaths) { this.imagePaths = imagePaths; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
