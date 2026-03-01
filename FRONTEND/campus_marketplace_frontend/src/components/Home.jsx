@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { FiSearch, FiList, FiChevronRight, FiChevronDown, FiGrid } from 'react-icons/fi';
+import { FiSearch, FiList, FiChevronRight, FiChevronDown, FiGrid, FiImage } from 'react-icons/fi';
 import Navbar from './Navbar';
 import '../App.css';
 
-// The identical taxonomy map from the backend to construct the sidebar
 const TAXONOMY = {
   ITEM: {
     "Electronics & Gadgets": ["Phones & Tablets", "Smart Watches", "Laptops & Computers", "Computer Monitors", "Computer Accessories (Mice, Keyboards, etc)", "Video Games", "Audio & Headphones", "Gaming Consoles and Controllers", "Phone & Tablet Accessories (Chargers/Cases)", "Other..."],
@@ -40,36 +39,53 @@ export default function Home() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Search & Deep Filter State
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // This single state object controls BOTH the sidebar and the pills
   const [activeFilter, setActiveFilter] = useState({
-    type: 'ALL',      // 'ALL', 'ITEM', 'SERVICE'
-    subType: 'ALL',   // e.g., 'Electronics & Gadgets'
-    category: 'ALL'   // e.g., 'Phones & Tablets'
+    type: 'ALL',      
+    subType: 'ALL',   
+    category: 'ALL'   
   });
-
-  // Controls which sidebar accordion is currently open
   const [expandedSidebarSection, setExpandedSidebarSection] = useState(null);
 
   const navigate = useNavigate();
-  const getImageUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
+  const location = useLocation();
 
+  const getImageUrl = (path) => path && typeof path === 'string' ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
+
+  // 1. Initial Load & Safely Read Router State
   useEffect(() => {
     const justUpgraded = localStorage.getItem('showMerchantCongrats');
     if (justUpgraded === 'true') {
       setShowCongrats(true);
       localStorage.removeItem('showMerchantCongrats');
     }
+
+    // Safely parse state from the "More >" button
+    if (location.state && location.state.activeCategory) {
+      setActiveFilter({
+        type: location.state.activeType || 'ALL',
+        subType: location.state.activeSubType || 'ALL',
+        category: location.state.activeCategory
+      });
+      setExpandedSidebarSection(location.state.activeSubType);
+      
+      // Use the silent history API to clear state so we don't trigger a React render loop
+      window.history.replaceState({}, document.title);
+    }
+
     fetchPublicProducts();
+    // eslint-disable-next-line
   }, []);
 
   const fetchPublicProducts = async () => {
     try {
       setLoading(true);
       const res = await axios.get('http://localhost:8081/api/products');
-      const activeOnly = res.data.filter(p => p.status === 'ACTIVE');
+      
+      // Bulletproof fallback: If backend returns weird data, default to empty array
+      const data = Array.isArray(res.data) ? res.data : [];
+      const activeOnly = data.filter(p => p.status === 'ACTIVE');
+      
       setProducts(activeOnly);
       setFilteredProducts(activeOnly);
     } catch (error) {
@@ -79,9 +95,9 @@ export default function Home() {
     }
   };
 
-  // --- THE FILTERING ENGINE ---
+  // 2. The Filtering Engine (Now Bulletproof)
   useEffect(() => {
-    let result = products;
+    let result = products || [];
 
     if (activeFilter.type !== 'ALL') result = result.filter(p => p.listingType === activeFilter.type);
     if (activeFilter.subType !== 'ALL') result = result.filter(p => p.subType === activeFilter.subType);
@@ -90,15 +106,17 @@ export default function Home() {
     if (searchQuery.trim() !== '') {
       const lowerQ = searchQuery.toLowerCase();
       result = result.filter(p => 
-        p.title.toLowerCase().includes(lowerQ) || 
-        p.description.toLowerCase().includes(lowerQ)
+        // Optional chaining (?.) prevents crashes if a product is missing a title or description
+        p.title?.toLowerCase().includes(lowerQ) || 
+        p.description?.toLowerCase().includes(lowerQ) ||
+        p.category?.toLowerCase().includes(lowerQ) ||
+        p.subType?.toLowerCase().includes(lowerQ)
       );
     }
 
     setFilteredProducts(result);
   }, [searchQuery, activeFilter, products]);
 
-  // Synchronizes clicks from Sidebar or Pills to the global filter state
   const handleCategorySelect = (type, subType, category) => {
     setActiveFilter({ type, subType, category });
     if (subType !== 'ALL') {
@@ -108,13 +126,11 @@ export default function Home() {
     }
   };
 
-  // When a Popular Pill is clicked, figure out where it lives in the taxonomy
   const handlePillClick = (catName) => {
     if (catName === 'ALL') {
       handleCategorySelect('ALL', 'ALL', 'ALL');
       return;
     }
-
     for (const [type, subTypes] of Object.entries(TAXONOMY)) {
       for (const [subType, categories] of Object.entries(subTypes)) {
         if (categories.includes(catName)) {
@@ -129,15 +145,13 @@ export default function Home() {
   };
 
   const handleProductClick = (productId) => {
-    console.log(`Navigating to product ${productId}...`);
-    // navigate(`/product/${productId}`); 
+    navigate(`/product/${productId}`); 
   };
 
   return (
     <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh' }}>
       <Navbar />
       
-      {/* --- RECOLORED HERO SEARCH SECTION --- */}
       <div className="hero-section">
         <h1 className="hero-title">Find What You Need on Campus</h1>
         <p className="hero-subtitle">
@@ -158,7 +172,6 @@ export default function Home() {
 
       <div className="storefront-container">
         
-        {/* --- LEFT SIDEBAR (JIJI STYLE CATEGORIES) --- */}
         <div className="storefront-sidebar">
           <h3 className="sidebar-title"><FiList size={18}/> Categories</h3>
           
@@ -171,7 +184,6 @@ export default function Home() {
             </span>
           </div>
 
-          {/* This was the line with the syntax error! Fixed now. */}
           {Object.entries(TAXONOMY).map(([type, subTypes]) => (
             <div key={type}>
               <div className="sidebar-type-label">
@@ -188,7 +200,6 @@ export default function Home() {
                       className={`sidebar-category-item ${isSubActive ? 'active' : ''}`}
                       onClick={() => {
                         if (isExpanded && isSubActive && activeFilter.category === 'ALL') {
-                          // Collapse if clicking the already active header
                           setExpandedSidebarSection(null);
                           handleCategorySelect(type, 'ALL', 'ALL');
                         } else {
@@ -223,10 +234,7 @@ export default function Home() {
           ))}
         </div>
 
-        {/* --- MAIN CONTENT AREA --- */}
         <div className="storefront-main">
-          
-          {/* Popular Category Pills */}
           <div className="popular-categories-label">Popular Categories</div>
           <div className="filter-pills">
             <button 
@@ -246,7 +254,6 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Product Grid */}
           {loading ? (
             <div style={{ textAlign: 'center', padding: '50px', color: '#64748b' }}>Loading latest listings...</div>
           ) : filteredProducts.length === 0 ? (
@@ -261,6 +268,8 @@ export default function Home() {
             <div className="inventory-grid">
               {filteredProducts.map((product) => {
                 const thumbPath = (product.imagePaths && product.imagePaths.length > 0) ? product.imagePaths[0] : product.imagePath;
+                // Safety fallback if a test product has no price
+                const safePrice = product.price ? product.price.toLocaleString() : '0';
 
                 return (
                   <div 
@@ -271,28 +280,28 @@ export default function Home() {
                   >
                     <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', height: 0, overflow: 'hidden', backgroundColor: '#f1f5f9' }}>
                       {thumbPath ? (
-                        <img src={getImageUrl(thumbPath)} alt={product.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={getImageUrl(thumbPath)} alt={product.title || 'Product'} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '12px' }}>
-                          No Image
+                          <FiImage size={30} />
                         </div>
                       )}
                       <div style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: product.listingType === 'ITEM' ? 'var(--color-accent)' : '#0ea5e9', color: product.listingType === 'ITEM' ? 'var(--color-primary-dark)' : 'white', padding: '4px 10px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px' }}>
-                        {product.listingType}
+                        {product.listingType || 'ITEM'}
                       </div>
                     </div>
 
                     <div style={{ padding: '15px' }}>
                       <h4 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {product.title}
+                        {product.title || 'Untitled'}
                       </h4>
                       <div style={{ color: '#16a34a', fontWeight: '800', fontSize: '18px', marginBottom: '8px' }}>
-                        ₦{product.price.toLocaleString()}
+                        ₦{safePrice}
                       </div>
                       
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#64748b' }}>
                         <span>{product.category === 'Other...' ? product.customCategory : product.category}</span>
-                        {product.listingType === 'ITEM' && <span style={{ backgroundColor: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>{product.itemCondition}</span>}
+                        {product.listingType === 'ITEM' && <span style={{ backgroundColor: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>{product.itemCondition || 'N/A'}</span>}
                       </div>
                     </div>
                   </div>

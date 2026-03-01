@@ -177,6 +177,7 @@ export default function MerchantProfileTab({ email }) {
       setIsSaving(false);
     }
   };
+  
 
   if (loading) return <p>Loading your storefront...</p>;
 

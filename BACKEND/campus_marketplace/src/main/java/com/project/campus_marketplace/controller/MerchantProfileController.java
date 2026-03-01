@@ -1,5 +1,7 @@
 package com.project.campus_marketplace.controller;
 
+import com.project.campus_marketplace.repository.MerchantProfileRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.project.campus_marketplace.model.MerchantProfile;
 import com.project.campus_marketplace.service.MerchantProfileService;
 import org.springframework.http.ResponseEntity;
@@ -12,8 +14,18 @@ public class MerchantProfileController {
 
     private final MerchantProfileService profileService;
 
+    @Autowired
+    private MerchantProfileRepository profileRepository;
+
     public MerchantProfileController(MerchantProfileService profileService) {
         this.profileService = profileService;
+    }
+
+    @GetMapping("/shop/{merchantId}")
+    public ResponseEntity<MerchantProfile> getShopProfile(@PathVariable Integer merchantId) {
+        return profileRepository.findByStudentId(merchantId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping

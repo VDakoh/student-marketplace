@@ -5,6 +5,9 @@ import Home from './components/Home';
 import UserProfile from './components/UserProfile';
 import AdminDashboard from './components/AdminDashboard';
 import AdminRoute from './components/AdminRoute';
+import ProductDetail from './components/ProductDetail';
+import MerchantShop from './components/MerchantShop';
+
 
 function App() {
   return (
@@ -14,13 +17,15 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/home" element={<Home />} />
         <Route path="/profile" element={<UserProfile />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/shop/:merchantId" element={<MerchantShop />} />
         <Route path="/admin" element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          } 
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        }
         />
-        
+
         <Route path="/" element={<Login />} />
       </Routes>
     </Router>
