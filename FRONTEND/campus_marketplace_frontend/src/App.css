@@ -1808,3 +1808,284 @@ textarea.profile-input {
 
 
 
+
+/* --- PUBLIC NAVBAR OVERRIDES --- */
+.navbar-wrapper {
+  background-color: var(--color-primary);
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); 
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Redesigned Flexbox to prevent wrapping */
+.navbar-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 5%;
+  gap: 20px;
+}
+
+.nav-brand {
+  flex: 0 0 auto; /* Forces brand to take only its natural space */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.nav-motto {
+  flex: 1 1 auto; /* Allows motto to naturally fill the center */
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6); /* Added opacity */
+  font-family: 'Inter', sans-serif; /* Cleaner font */
+  font-size: 13px; 
+  font-weight: 800; 
+  letter-spacing: 2.5px; 
+  text-transform: uppercase; /* Forced all caps */
+  margin: 0 20px;
+}
+
+.nav-actions {
+  flex: 0 0 auto; /* Forces actions to stay on one line */
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+/* User Profile Hover Effect & Line Locking */
+.nav-profile-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  white-space: nowrap; /* Prevents "Hi, User" from wrapping */
+  transition: color 0.2s ease;
+}
+
+.nav-profile-menu:hover {
+  color: var(--color-accent); /* Adds the missing hover effect */
+}
+
+/* The redesigned TWO-LINE Button */
+.nav-btn-sell {
+  background-color: var(--color-accent);
+  color: var(--color-primary-dark);
+  padding: 8px 24px;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 12px;
+  box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3);
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Space between icon and text */
+}
+
+.nav-btn-sell:hover {
+  transform: translateY(-2px);
+}
+
+.nav-btn-sell .sell-icon {
+  font-size: 26px; /* Larger icon */
+}
+
+.nav-btn-sell .sell-text {
+  text-align: left;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+
+/* --- HERO SECTION --- */
+.hero-section {
+  background-color: var(--color-primary);
+  padding: 50px 20px 60px 20px;
+  text-align: center;
+  color: white;
+}
+
+.hero-title {
+  margin: 0 0 15px 0;
+  font-size: 36px;
+  font-weight: 800;
+}
+
+.hero-subtitle {
+  margin: 0 auto 30px auto;
+  font-size: 18px;
+  color: #cbd5e1;
+  max-width: 600px;
+}
+
+.hero-search-container {
+  position: relative;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.hero-search-input {
+  width: 100%;
+  padding: 18px 20px 18px 55px;
+  border-radius: 30px;
+  border: none;
+  font-size: 16px;
+  outline: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+}
+
+
+/* --- STOREFRONT LAYOUT --- */
+.storefront-container {
+  max-width: 1250px; /* Reduced width to stop it from looking shifted right */
+  margin: 40px auto;
+  padding: 0 20px;
+  display: flex;
+  gap: 50px; /* Increased gap to push sidebar away from content */
+  align-items: flex-start;
+}
+
+/* --- LEFT SIDEBAR (JIJI STYLE) --- */
+.storefront-sidebar {
+  width: 250px; /* Slightly slimmer sidebar */
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  position: sticky;
+  top: 100px; /* Sticks to the top while scrolling */
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
+
+.sidebar-title {
+  background: var(--color-primary-dark);
+  color: white;
+  padding: 15px 20px;
+  font-weight: 700;
+  font-size: 16px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-type-label {
+  padding: 12px 20px;
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-category-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text-main);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.sidebar-category-item:hover, .sidebar-category-item.active {
+  background: #f1f5f9;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.sidebar-subcategory-list {
+  background: #f8fafc;
+  border-left: 3px solid var(--color-accent);
+}
+
+.sidebar-subcategory-item {
+  padding: 10px 20px 10px 35px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.sidebar-subcategory-item:last-child {
+  border-bottom: none;
+}
+
+.sidebar-subcategory-item:hover, .sidebar-subcategory-item.active {
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+/* --- MAIN CONTENT AREA --- */
+.storefront-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.popular-categories-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+.filter-pill {
+  padding: 8px 18px;
+  border-radius: 20px;
+  background: white;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-pill:hover, .filter-pill.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.no-listings-card {
+  text-align: center;
+  padding: 80px 20px;
+  background-color: white;
+  border-radius: 12px;
+  border: 1px dashed var(--color-border);
+}
+
+.btn-clear-filters {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #e2e8f0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #475569;
+  transition: background 0.2s;
+}
+
+.btn-clear-filters:hover { background-color: #cbd5e1; }

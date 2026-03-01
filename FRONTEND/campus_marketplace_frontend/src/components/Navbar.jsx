@@ -2,8 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { FaRegQuestionCircle, FaRegBookmark, FaRegBell, FaRegUserCircle, FaStore } from 'react-icons/fa';
-// Added the missing FiMessageSquare and FiSettings imports here!
-import { FiSearch, FiShoppingCart, FiUser, FiLogOut, FiBox, FiAlertTriangle, FiMessageSquare, FiSettings } from 'react-icons/fi';
+import { FiLogOut, FiBox, FiAlertTriangle, FiMessageSquare, FiSettings } from 'react-icons/fi';
 import logo from '../assets/images/image.png';
 
 export default function Navbar() {
@@ -12,7 +11,6 @@ export default function Navbar() {
   const dropdownRef = useRef(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Decoded user info
   let userRole = null;
   let firstName = 'User';
 
@@ -21,16 +19,12 @@ export default function Navbar() {
     try {
       const decoded = jwtDecode(token);
       userRole = decoded.role;
-      // Extract first name from full name
-      if (decoded.name) {
-        firstName = decoded.name.split(' ')[0];
-      }
+      if (decoded.name) firstName = decoded.name.split(' ')[0];
     } catch (error) {
       console.error("Invalid token");
     }
   }
 
-  // Close dropdown if user clicks completely outside of it
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -55,12 +49,9 @@ export default function Navbar() {
           <h2>Babcock <span>Marketplace</span></h2>
         </Link>
 
-        <div className="nav-search-container">
-          <input
-            type="text"
-            placeholder="Search products, brands and categories..."
-            className="nav-search-input"
-          />
+        {/* --- THE MOTTO (Centered) --- */}
+        <div className="nav-motto">
+          Uniting the Babcock Community, One Trade at a Time.
         </div>
 
         <div className="nav-actions">
@@ -68,44 +59,44 @@ export default function Navbar() {
             <FaRegQuestionCircle />
             <span>Help</span>
           </Link>
-          {/* Mapped to Saved Tab */}
           <Link to="/profile?tab=saved" className="nav-icon-link">
             <FaRegBookmark />
             <span>Saved</span>
           </Link>
-          {/* Mapped to Notifications Tab */}
           <Link to="/profile?tab=notifications" className="nav-icon-link">
             <FaRegBell />
             <span>Alerts</span>
           </Link>
 
-          {/* Profile Dropdown */}
+          {/* Profile Dropdown with nowrap */}
           <div className="nav-profile-menu" ref={dropdownRef} onClick={() => setDropdownOpen(!dropdownOpen)}>
             <FaRegUserCircle style={{ fontSize: '24px' }} />
             <span>Hi, {firstName}</span>
 
             {dropdownOpen && (
               <div className="dropdown-content">
-                {/* MAPPED DROPDOWN LINKS */}
                 <Link to="/profile?tab=account" className="dropdown-item"><FaRegUserCircle /> My Account</Link>
                 <Link to="/profile?tab=orders" className="dropdown-item"><FiBox /> Orders</Link>
                 <Link to="/profile?tab=notifications" className="dropdown-item"><FiMessageSquare /> Inbox</Link>
                 <Link to="/profile?tab=account" className="dropdown-item"><FiSettings /> Settings</Link>
-                <div className="dropdown-item" onClick={() => setShowLogoutModal(true)} style={{ color: '#ef4444' }}>
+                <div className="dropdown-item dropdown-logout" onClick={() => setShowLogoutModal(true)}>
                   <FiLogOut /> Logout
                 </div>
               </div>
             )}
           </div>
 
-          {/* The Call to Action Button mapped to Merchant Tab */}
-          {userRole === 'BUYER' ? (
-            <Link to="/profile?tab=merchant" className="nav-btn-sell">BECOME A MERCHANT</Link>
-          ) : (
-            <Link to="/profile?tab=merchant" className="nav-btn-sell" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <FaStore /> MERCHANT DASHBOARD
-            </Link>
-          )}
+          {/* TWO-LINE BUTTON WITH CENTERED ICON */}
+          <Link to="/profile?tab=merchant" className="nav-btn-sell">
+            <FaStore className="sell-icon" />
+            <div className="sell-text">
+              {userRole === 'BUYER' ? (
+                <>BECOME A<br/>MERCHANT</>
+              ) : (
+                <>MERCHANT<br/>DASHBOARD</>
+              )}
+            </div>
+          </Link>
         </div>
       </div>
 
