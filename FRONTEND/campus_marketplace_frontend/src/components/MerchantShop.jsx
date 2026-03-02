@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiPhone, FiMail, FiMapPin, FiClock, FiImage } from 'react-icons/fi';
-import { FaStore } from 'react-icons/fa';
+import { FiMapPin, FiClock, FiImage } from 'react-icons/fi';
+import { FaStore, FaCheckCircle, FaWhatsapp, FaEnvelope } from 'react-icons/fa';
 import Navbar from './Navbar';
 import '../App.css';
 
-// Import the tower image to use as the default banner
+// Default fallback banner
 import defaultBanner from '../assets/images/tower.png';
 
 export default function MerchantShop() {
@@ -38,77 +38,103 @@ export default function MerchantShop() {
     fetchShopData();
   }, [merchantId]);
 
-  if (loading) return <div style={{ padding: '80px', textAlign: 'center', color: '#64748b' }}>Opening Shop...</div>;
+  if (loading) return <div style={{ padding: '80px', textAlign: 'center', color: '#64748b', fontWeight: 'bold' }}>Opening Premium Shop...</div>;
   if (!profile) return <div style={{ padding: '80px', textAlign: 'center', color: '#ef4444' }}>Shop not found.</div>;
 
+  const bannerUrl = profile.bannerPath ? getImageUrl(profile.bannerPath) : defaultBanner;
+  
+  // Clean phone number for WhatsApp link
+  const waNumber = profile.publicPhone ? profile.publicPhone.replace(/\D/g, '') : '';
+
   return (
-    <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', paddingBottom: '100px' }}>
+    <div className="merchant-page-wrapper">
       <Navbar />
       
-      {/* --- CINEMATIC SHOP BANNER --- */}
-      <div className="shop-banner-container">
-        <img 
-            src={profile.bannerPath ? getImageUrl(profile.bannerPath) : defaultBanner} 
-            alt="Shop Banner" 
-            className="shop-banner-img" 
-        />
-        <div className="shop-banner-overlay"></div>
-      </div>
+      {/* --- BACKGROUND LAYER: FULL WIDTH PARALLAX FADE --- */}
+      <div 
+        className="parallax-banner-bg" 
+        style={{ backgroundImage: `url(${bannerUrl})` }}
+      />
 
       <div className="shop-layout-container">
         
-        {/* --- FLOATING HEADER CARD --- */}
-        <div className="shop-header-card">
-          <div className="shop-logo-wrapper">
-            {profile.logoPath ? (
-              <img src={getImageUrl(profile.logoPath)} alt="Logo" className="shop-logo-img" />
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', backgroundColor: '#f1f5f9', color: '#94a3b8' }}>
-                <FaStore size={40} />
-              </div>
-            )}
-          </div>
+        {/* --- FOREGROUND LAYER: THE GLASS CARD --- */}
+        <div className="shop-header-glass-card">
           
-          <h1 className="shop-name-title">{profile.businessName || "Campus Shop"}</h1>
-          <p className="shop-tagline-text">{profile.tagline || "Verified Student Merchant"}</p>
+          {/* Card Top: Internal Banner (Top 40%) */}
+          <div className="card-internal-banner" style={{ backgroundImage: `url(${bannerUrl})` }}></div>
           
-          <div className="shop-contact-pills">
-             {profile.publicPhone && <span className="contact-pill"><FiPhone /> {profile.publicPhone}</span>}
-             {profile.publicEmail && <span className="contact-pill"><FiMail /> {profile.publicEmail}</span>}
+          {/* Card Bottom: Frosted Glass (Bottom 60%) */}
+          <div className="card-glass-content">
+            
+            {/* The 200px Avatar Straddling the Line */}
+            <div className="shop-logo-wrapper-large">
+              {profile.logoPath ? (
+                <img src={getImageUrl(profile.logoPath)} alt="Logo" className="shop-logo-img" />
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', backgroundColor: '#f8fafc', color: '#94a3b8' }}>
+                  <FaStore size={60} />
+                </div>
+              )}
+            </div>
+            
+            <div className="shop-identity-flex">
+               <h1 className="shop-name-title">
+                  {profile.businessName || "Campus Shop"}
+                  <FaCheckCircle className="verified-badge" title="Verified Student Merchant" />
+               </h1>
+            </div>
+            
+            <p className="shop-tagline-text">{profile.tagline || "Providing quality items and services to the Babcock community."}</p>
+            <div className="shop-join-date">Active Student Merchant • Babcock University</div>
+            
+            {/* Action-Oriented Contact Pills */}
+            <div className="shop-action-pills">
+               {profile.publicPhone && (
+                 <a href={`https://wa.me/${waNumber}`} target="_blank" rel="noopener noreferrer" className="action-pill whatsapp-pill">
+                   <FaWhatsapp size={18} /> Chat on WhatsApp
+                 </a>
+               )}
+               {profile.publicEmail && (
+                 <a href={`mailto:${profile.publicEmail}`} className="action-pill email-pill">
+                   <FaEnvelope size={18} /> Email Merchant
+                 </a>
+               )}
+            </div>
           </div>
         </div>
 
         {/* --- MAIN SHOP CONTENT --- */}
         <div className="shop-content-grid">
           
-          {/* LEFT: SIDEBAR INFO */}
+          {/* LEFT: SEAMLESS SIDEBAR INFO */}
           <div className="shop-info-sidebar">
-            <div className="info-section">
+            <div className="info-section seamless-about">
               <h3>About the Business</h3>
               <p>{profile.description || "This merchant hasn't added a description yet."}</p>
             </div>
 
-            <div className="info-section">
-              <h3><FiMapPin /> Location</h3>
+            <div className="info-section seamless-location">
+              <h3><FiMapPin /> Location Details</h3>
               <p><strong>Campus:</strong> {profile.campus || "Not specified"}</p>
               <p><strong>Area:</strong> {profile.primaryLocation || "Not specified"}</p>
-              {profile.specificAddress && <p><strong>Details:</strong> {profile.specificAddress}</p>}
+              {profile.specificAddress && <p><strong>Specifics:</strong> {profile.specificAddress}</p>}
             </div>
 
             {profile.businessHours && (
-              <div className="info-section">
+              <div className="info-section seamless-hours">
                 <h3><FiClock /> Operating Hours</h3>
                 <p style={{ whiteSpace: 'pre-wrap' }}>{profile.businessHours}</p>
               </div>
             )}
           </div>
 
-          {/* RIGHT: PRODUCT GRID (Reusing Homepage Logic) */}
+          {/* RIGHT: PRODUCT GRID */}
           <div className="shop-products-area">
-             <h2 className="shop-section-title">Current Listings ({products.length})</h2>
+             <h2 className="shop-section-title">Store Inventory ({products.length})</h2>
              
              {products.length === 0 ? (
-               <div className="empty-shop-state">
+               <div className="empty-shop-state frosted">
                   <FiImage size={40} color="#cbd5e1" style={{ marginBottom: '15px' }} />
                   <p>This merchant hasn't posted any items yet.</p>
                </div>
@@ -123,7 +149,7 @@ export default function MerchantShop() {
                        key={product.id} 
                        className="inventory-card" 
                        onClick={() => navigate(`/product/${product.id}`)}
-                       style={{ cursor: 'pointer', backgroundColor: 'white' }}
+                       style={{ cursor: 'pointer', backgroundColor: 'white', border: '1px solid rgba(0,0,0,0.05)' }}
                      >
                        <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', height: 0, overflow: 'hidden', backgroundColor: '#f1f5f9' }}>
                          {thumbPath ? (

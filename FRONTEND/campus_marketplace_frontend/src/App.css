@@ -2642,168 +2642,203 @@ textarea.profile-input {
 
 
 
-/* --- MERCHANT SHOP PAGE STYLES --- */
-.shop-banner-container {
-  width: 100%;
-  height: 320px; /* Taller, more cinematic banner */
+/* --- MERCHANT SHOP PAGE STYLES (GLASSMORPHIC PARALLAX) --- */
+.merchant-page-wrapper {
+  background-color: #f8fafc; /* Soft clean gray base */
+  min-height: 100vh;
   position: relative;
-  background-color: var(--color-primary-dark);
+  padding-bottom: 100px;
 }
 
-.shop-banner-img { 
-  width: 100%; 
-  height: 100%; 
-  object-fit: cover; 
-}
-
-.shop-banner-overlay {
-  position: absolute; 
-  inset: 0;
-  /* Creates a fade effect so the white card pops out */
-  background: linear-gradient(to bottom, rgba(0,0,0,0.1) 40%, rgba(15, 23, 42, 0.7) 100%);
+/* The Massive Bleeding Parallax Background */
+.parallax-banner-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 65vh;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed; /* Creates the parallax effect */
+  z-index: 0;
+  opacity: 0.7;
+  /* Fades the image seamlessly into the gray background */
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%);
 }
 
 .shop-layout-container { 
   max-width: 1250px; 
-  margin: -100px auto 0; /* Pulls the content up over the banner */
-  padding: 0 20px; 
+  margin: 0 auto; 
+  padding: 40px 20px 0; 
   position: relative; 
-  z-index: 10; 
+  z-index: 10; /* Keeps content above the parallax background */
 }
 
-/* The Central Floating Header */
-.shop-header-card { 
-  background: white; 
-  border-radius: 16px; 
-  padding: 0 30px 30px 30px; 
+/* The Creator Glass Card */
+.shop-header-glass-card { 
+  border-radius: 24px; 
+  overflow: hidden; 
+  box-shadow: 0 20px 50px rgba(0,0,0,0.1); 
+  margin-bottom: 50px; 
+  border: 1px solid rgba(255,255,255, 0.5); /* Subtle rim light */
+}
+
+/* Internal Card Banner (Top 40%) */
+.card-internal-banner {
+  width: 100%;
+  height: 350px; /* INCREASED from 250px to prevent extreme zooming/cropping */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Frosted Glass Section (Bottom 60%) */
+.card-glass-content {
+  background: rgba(255, 255, 255, 0.75); /* Translucent white */
+  backdrop-filter: blur(10px); /* Frosted glass blur */
+  -webkit-backdrop-filter: blur(10px);
+  padding: 0 30px 40px 30px; 
   display: flex; 
   flex-direction: column; 
   align-items: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
-  margin-bottom: 40px; 
   text-align: center;
 }
 
-.shop-logo-wrapper {
-  width: 140px; 
-  height: 140px; 
-  margin-top: -70px; /* Pushes the logo half-off the card */
+/* The Overlapping 200px Avatar */
+.shop-logo-wrapper-large {
+  width: 200px; 
+  height: 200px; 
+  margin-top: -100px; /* Pulls it up perfectly to straddle the line */
   border-radius: 50%;
-  border: 6px solid white; 
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+  border: 6px solid rgba(255, 255, 255, 0.9); /* Thick white rim */
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
   overflow: hidden; 
   background: white; 
   margin-bottom: 20px;
+  position: relative;
+  z-index: 2;
 }
 
 .shop-logo-img { 
-  width: 100%; 
-  height: 100%; 
-  object-fit: cover; 
+  width: 100%; height: 100%; object-fit: cover; 
+}
+
+.shop-identity-flex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
 }
 
 .shop-name-title { 
-  margin: 0 0 5px 0; 
-  font-size: 32px; 
+  margin: 0; 
+  font-size: 34px; 
   color: var(--color-primary-dark); 
-  font-weight: 800; 
+  font-weight: 900; 
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.verified-badge {
+  color: #0ea5e9; /* Trust Blue */
+  font-size: 22px;
 }
 
 .shop-tagline-text { 
-  margin: 0 0 20px 0; 
-  color: #64748b; 
-  font-size: 16px; 
-  font-style: italic; 
+  margin: 0 0 8px 0; 
+  color: #334155; 
+  font-size: 17px; 
+  font-weight: 500;
 }
 
-.shop-contact-pills { 
+.shop-join-date {
+  font-size: 13px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  margin-bottom: 25px;
+}
+
+/* Action-Oriented Buttons */
+.shop-action-pills { 
   display: flex; 
   gap: 15px; 
   flex-wrap: wrap; 
   justify-content: center; 
 }
 
-.contact-pill { 
+.action-pill { 
   display: flex; 
   align-items: center; 
   gap: 8px; 
-  background: #f1f5f9; 
-  padding: 8px 18px; 
-  border-radius: 25px; 
-  font-size: 14px; 
-  color: #475569; 
-  font-weight: 700; 
-  border: 1px solid #e2e8f0;
+  padding: 12px 24px; 
+  border-radius: 30px; 
+  font-size: 15px; 
+  font-weight: 800; 
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* Shop Layout Grid */
+.action-pill:hover {
+  transform: translateY(-2px);
+}
+
+.whatsapp-pill {
+  background-color: #25D366;
+  color: white;
+}
+.whatsapp-pill:hover { box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4); }
+
+.email-pill {
+  background-color: var(--color-primary);
+  color: white;
+}
+.email-pill:hover { box-shadow: 0 6px 20px rgba(10, 37, 64, 0.4); }
+
+/* Seamless Sidebar (No harsh borders) */
 .shop-content-grid { 
-  display: flex; 
-  gap: 40px; 
-  align-items: flex-start;
+  display: flex; gap: 40px; align-items: flex-start;
 }
-
 .shop-info-sidebar { 
-  width: 320px; 
-  flex-shrink: 0;
-  display: flex; 
-  flex-direction: column; 
-  gap: 20px; 
+  width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; 
 }
 
 .info-section { 
-  background: white; 
   padding: 25px; 
-  border-radius: 12px; 
-  border: 1px solid var(--color-border); 
-  box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+  border-radius: 16px; 
+  border: none;
 }
 
+/* Pastel Tints for Visual Separation */
+.seamless-about { background-color: #f1f5f9; color: #334155; }
+.seamless-location { background-color: #eff6ff; color: #1e3a8a; }
+.seamless-hours { background-color: #fef3c7; color: #92400e; }
+
 .info-section h3 { 
-  font-size: 13px; 
-  text-transform: uppercase; 
-  color: var(--color-primary); 
-  margin: 0 0 15px 0; 
-  display: flex; 
-  align-items: center; 
-  gap: 8px; 
-  letter-spacing: 1px;
-  font-weight: 800;
+  font-size: 14px; text-transform: uppercase; margin: 0 0 15px 0; 
+  display: flex; align-items: center; gap: 8px; font-weight: 800; opacity: 0.8;
 }
 
 .info-section p {
-  margin: 0 0 10px 0;
-  font-size: 14px;
-  color: var(--color-text-main);
-  line-height: 1.6;
+  margin: 0 0 10px 0; font-size: 14px; line-height: 1.6; font-weight: 500;
 }
-
 .info-section p:last-child { margin: 0; }
 
-.shop-products-area { 
-  flex: 1; 
-  min-width: 0;
-}
+.shop-products-area { flex: 1; min-width: 0; }
 
 .shop-section-title {
-  font-size: 22px;
-  color: var(--color-primary-dark);
-  margin: 0 0 20px 0;
-  padding-bottom: 15px;
-  border-bottom: 2px solid var(--color-border);
+  font-size: 24px; color: var(--color-primary-dark); margin: 0 0 20px 0;
+  padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; font-weight: 800;
 }
 
-.empty-shop-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: white;
-  border-radius: 12px;
-  border: 2px dashed #cbd5e1;
-  padding: 60px 20px;
-  color: #64748b;
-  font-weight: 600;
+.empty-shop-state.frosted {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255, 0.8);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
 }
+
 
 /* --- MERCHANT SHOP PAGE STYLES ENDS --- */
