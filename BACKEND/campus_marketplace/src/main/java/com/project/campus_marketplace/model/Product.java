@@ -39,6 +39,9 @@ public class Product {
     private String itemCondition;
     private Integer stockQuantity;
 
+    @Column(unique = true)
+    private String sku;
+
     // --- MULTI-IMAGE ENGINE ---
     @ElementCollection
     @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
@@ -101,4 +104,12 @@ public class Product {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
 }

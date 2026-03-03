@@ -27,7 +27,15 @@ export default function MerchantShop() {
 
         const productsRes = await axios.get(`http://localhost:8081/api/products`);
         const data = Array.isArray(productsRes.data) ? productsRes.data : [];
-        const merchantOnly = data.filter(p => p.merchantId.toString() === merchantId && p.status === 'ACTIVE');
+        
+        // --- THE FIX: Extract the actual numeric ID from the slug ---
+        // Converts "ferrous-media-shopid8" -> "8"
+        const actualMerchantId = merchantId.includes('-shopid') 
+            ? merchantId.split('-shopid')[1] 
+            : merchantId;
+
+        // Now filter using the clean numeric ID
+        const merchantOnly = data.filter(p => p.merchantId.toString() === actualMerchantId && p.status === 'ACTIVE');
         setProducts(merchantOnly);
       } catch (error) {
         console.error("Error loading shop:", error);
@@ -148,7 +156,7 @@ export default function MerchantShop() {
                      <div 
                        key={product.id} 
                        className="inventory-card" 
-                       onClick={() => navigate(`/product/${product.id}`)}
+                       onClick={() => navigate(`/product/${product.sku || product.id}`)}
                        style={{ cursor: 'pointer', backgroundColor: 'white', border: '1px solid rgba(0,0,0,0.05)' }}
                      >
                        <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', height: 0, overflow: 'hidden', backgroundColor: '#f1f5f9' }}>

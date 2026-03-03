@@ -194,7 +194,7 @@ export default function MerchantProductsTab({ email }) {
         setRawImageForCropper(null); 
         
         if (!isModalOpen) setIsModalOpen(true);
-      }, 'image/jpeg', 0.8);
+      }, 'image/jpeg', 1);
 
     } catch (e) {
       console.error("Error cropping image:", e);
@@ -554,6 +554,9 @@ export default function MerchantProductsTab({ email }) {
                 {/* Thumbnail Helper Text */}
                 <p style={{ fontSize: '12px', color: '#64748b', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <FiInfo size={14}/> The first image will be used as the product thumbnail on the marketplace.
+                </p>
+                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <FiInfo size={14}/> Note that pictures uploaded will be cropped to 1:1 aspect ratio.
                 </p>
               </div>
 

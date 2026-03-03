@@ -21,11 +21,29 @@ public class MerchantProfileController {
         this.profileService = profileService;
     }
 
-    @GetMapping("/shop/{merchantId}")
-    public ResponseEntity<MerchantProfile> getShopProfile(@PathVariable Integer merchantId) {
-        return profileRepository.findByStudentId(merchantId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("/shop/{identifier}")
+    public ResponseEntity<MerchantProfile> getShopProfile(@PathVariable String identifier) {
+        try {
+            // 1. If it's purely a numeric ID (Used by ProductDetail sidebar)
+            if (identifier.matches("\\d+")) {
+                Integer merchantId = Integer.parseInt(identifier);
+                return profileRepository.findByStudentId(merchantId)
+                        .map(ResponseEntity::ok)
+                        .orElse(ResponseEntity.notFound().build());
+            }
+
+            // 2. If it's a generated shop slug (Used for public URLs)
+            String[] parts = identifier.split("-shopid");
+            if (parts.length != 2) return ResponseEntity.badRequest().build();
+
+            Integer merchantId = Integer.parseInt(parts[1]);
+
+            return profileRepository.findByStudentId(merchantId)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping

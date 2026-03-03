@@ -6,6 +6,13 @@ import { FaStore } from 'react-icons/fa';
 import Navbar from './Navbar';
 import '../App.css';
 
+const generateShopSlug = (businessName, merchantId) => {
+    if (!businessName) return `shop-shopid${merchantId}`;
+    // Converts "Derrick Gadgets!" to "derrick-gadgets"
+    const slugified = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    return `${slugified}-shopid${merchantId}`;
+};
+
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -16,6 +23,8 @@ export default function ProductDetail() {
   
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  
 
   const getImageUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
 
@@ -29,7 +38,7 @@ export default function ProductDetail() {
         setAllProducts(activeProducts);
         
         // 2. Find current product
-        const foundProduct = activeProducts.find(p => p.id.toString() === id);
+        const foundProduct = activeProducts.find(p => p.sku === id || p.id.toString() === id);
         setProduct(foundProduct);
 
         // 3. Fetch Merchant Profile for the Sidebar
@@ -182,7 +191,7 @@ export default function ProductDetail() {
                  {displayedMerchantProducts.length > 0 ? displayedMerchantProducts.map(p => renderMiniCard(p)) : <p style={{color: '#64748b', fontSize: '14px', fontStyle: 'italic', padding: '10px 0'}}>No other products listed yet.</p>}
                  
                  {displayedMerchantProducts.length > 0 && (
-                   <div className="inventory-card mini-card more-card" onClick={() => navigate(`/shop/${product.merchantId}`)}>
+                   <div className="inventory-card mini-card more-card" onClick={() => navigate(`/shop/${generateShopSlug(merchantProfile?.businessName, product.merchantId)}`)}>
                        <div className="more-card-content">
                            <span>More</span>
                            <FiArrowRight size={24} />
@@ -194,7 +203,6 @@ export default function ProductDetail() {
 
         </div>
 
-        {/* --- FLOATING RIGHT SIDEBAR (MERCHANT PANEL) --- */}
         {/* --- FLOATING RIGHT SIDEBAR (MERCHANT PANEL) --- */}
         <div className="product-sidebar">
            <div className="merchant-preview-card">
@@ -268,7 +276,7 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              <button className="btn-contact-merchant" style={{ padding: '15px', fontSize: '15px' }} onClick={() => navigate(`/shop/${product.merchantId}`)}>
+              <button className="btn-contact-merchant" style={{ padding: '15px', fontSize: '15px' }} onClick={() => navigate(`/shop/${generateShopSlug(merchantProfile?.businessName, product.merchantId)}`)}>
                  Visit Merchant's Shop
               </button>
            </div>

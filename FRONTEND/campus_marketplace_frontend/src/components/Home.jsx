@@ -144,8 +144,9 @@ export default function Home() {
     }
   };
 
-  const handleProductClick = (productId) => {
-    navigate(`/product/${productId}`); 
+  const handleProductClick = (product) => {
+    const routeId = product.sku || product.id; 
+    navigate(`/product/${routeId}`); 
   };
 
   return (
@@ -275,7 +276,7 @@ export default function Home() {
                   <div 
                     key={product.id} 
                     className="inventory-card" 
-                    onClick={() => handleProductClick(product.id)}
+                    onClick={() => handleProductClick(product)}
                     style={{ cursor: 'pointer', backgroundColor: 'white' }}
                   >
                     <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', height: 0, overflow: 'hidden', backgroundColor: '#f1f5f9' }}>
