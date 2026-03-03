@@ -2328,7 +2328,7 @@ textarea.profile-input {
 .thumbnail-row {
   display: flex;
   gap: 10px;
-  padding: 20px;
+  padding: 40px 10px;
   overflow-x: auto;
   border-top: 1px solid var(--color-border);
 }
@@ -2360,7 +2360,7 @@ textarea.profile-input {
 /* Right Side: Details */
 .product-info-section {
   width: 50%;
-  padding: 40px;
+  padding: 40px 40px 40px 40px;
   display: flex;
   flex-direction: column;
 }
@@ -2411,6 +2411,10 @@ textarea.profile-input {
   background-color: #0ea5e9;
 }
 
+.product-description-box{
+  max-height: 200px;
+}
+
 .product-description-box h3 {
   margin: 0 0 15px 0;
   font-size: 16px;
@@ -2425,6 +2429,40 @@ textarea.profile-input {
   line-height: 1.7;
   font-size: 15px;
   white-space: pre-wrap;
+}
+
+/* --- PRODUCT VIEW PAGE DESCRIPTION SCROLL FIX --- */
+.product-description-scroll-container {
+  max-height: 250px; /* Lock the height of the description */
+  overflow-y: auto; /* Enable vertical scrolling *only* if content is too long */
+  padding-right: 15px; /* Add space so text doesn't hit the scrollbar */
+  margin-bottom: 20px;
+}
+
+.product-description-scroll-container p {
+  margin: 0;
+  line-height: 1.7;
+  color: #334155;
+  font-size: 15px;
+}
+
+/* Custom Styled Scrollbar (for a premium look) */
+.product-description-scroll-container::-webkit-scrollbar {
+  width: 6px; /* Subtle thin width */
+}
+
+.product-description-scroll-container::-webkit-scrollbar-track {
+  background: #f1f5f9; /* Faint gray track */
+  border-radius: 10px;
+}
+
+.product-description-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* Subtle gray thumb */
+  border-radius: 10px;
+}
+
+.product-description-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; /* Darker gray on hover */
 }
 
 .product-actions-box {
@@ -2500,6 +2538,7 @@ textarea.profile-input {
 }
 
 .product-sidebar {
+  margin-top: 38px;
   width: 320px;
   flex-shrink: 0;
   position: sticky;
@@ -2842,3 +2881,143 @@ textarea.profile-input {
 
 
 /* --- MERCHANT SHOP PAGE STYLES ENDS --- */
+
+
+
+
+
+
+/* --- ADVANCED FILTER PANEL --- */
+
+.filter-controls-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.btn-toggle-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-toggle-filters:hover, .btn-toggle-filters.active {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: var(--color-primary-dark);
+}
+
+.advanced-filter-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 25px 45px 25px 25px; /* Added right padding so content doesn't hit the X button */
+  margin-bottom: 30px;
+  display: flex;
+  gap: 25px; /* Increased gap for better spacing */
+  flex-wrap: wrap;
+  align-items: flex-end;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  border: 1px solid var(--color-border);
+  animation: slideDown 0.3s ease-out forwards;
+  position: relative; /* Required to anchor the absolute close button */
+}
+
+/* New Close Button Styles */
+.btn-close-filters {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-close-filters:hover {
+  background: #e2e8f0;
+  color: #ef4444; /* Changes to a soft warning red on hover */
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px; /* Increased from 150px to stretch the boxes nicely */
+}
+
+.filter-group label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.price-inputs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.price-inputs input, .filter-group select {
+  width: 100%;
+  height: 45px; /* Locks the height so all boxes are identical */
+  box-sizing: border-box; /* Ensures borders don't add extra height */
+  padding: 0 15px; 
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  outline: none;
+  background: #f8fafc;
+  transition: border-color 0.2s;
+}
+
+.price-inputs input:focus, .filter-group select:focus {
+  border-color: var(--color-primary);
+  background: white;
+}
+
+.btn-clear-advanced {
+  padding: 0 20px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 8px;
+  color: #475569;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  height: 45px; /* Matches the exact height of the input boxes */
+}
+
+.btn-clear-advanced:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+/* --- ADVANCED FILTER PANEL ENDS --- */

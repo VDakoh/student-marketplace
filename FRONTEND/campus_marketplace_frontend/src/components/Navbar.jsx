@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { FaRegQuestionCircle, FaRegBookmark, FaRegBell, FaRegUserCircle, FaStore } from 'react-icons/fa';
-import { FiLogOut, FiBox, FiAlertTriangle, FiMessageSquare, FiSettings } from 'react-icons/fi';
+import { FiLogOut, FiBox, FiAlertTriangle, FiMessageSquare, FiHome } from 'react-icons/fi';
 import logo from '../assets/images/image.png';
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation(); // Hook to get current URL path
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -24,6 +25,10 @@ export default function Navbar() {
       console.error("Invalid token");
     }
   }
+
+  // Determine current context for dynamic button rendering
+  const isHomePage = location.pathname === '/home';
+  const isProfilePage = location.pathname === '/profile';
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -55,6 +60,15 @@ export default function Navbar() {
         </div>
 
         <div className="nav-actions">
+          
+          {/* Dynamic Home Button - Hidden on Home and Profile pages */}
+          {!isHomePage && !isProfilePage && (
+            <Link to="/home" className="nav-icon-link">
+              <FiHome />
+              <span>Home</span>
+            </Link>
+          )}
+
           <Link to="/help" className="nav-icon-link">
             <FaRegQuestionCircle />
             <span>Help</span>
@@ -68,17 +82,17 @@ export default function Navbar() {
             <span>Alerts</span>
           </Link>
 
-          {/* Profile Dropdown with nowrap */}
+          {/* Profile Dropdown (Cleaned up UX) */}
           <div className="nav-profile-menu" ref={dropdownRef} onClick={() => setDropdownOpen(!dropdownOpen)}>
             <FaRegUserCircle style={{ fontSize: '24px' }} />
             <span>Hi, {firstName}</span>
 
             {dropdownOpen && (
               <div className="dropdown-content">
-                <Link to="/profile?tab=account" className="dropdown-item"><FaRegUserCircle /> My Account</Link>
-                <Link to="/profile?tab=orders" className="dropdown-item"><FiBox /> Orders</Link>
-                <Link to="/profile?tab=notifications" className="dropdown-item"><FiMessageSquare /> Inbox</Link>
-                <Link to="/profile?tab=account" className="dropdown-item"><FiSettings /> Settings</Link>
+                <Link to="/profile?tab=account" className="dropdown-item"><FaRegUserCircle /> My Profile</Link>
+                <Link to="/profile?tab=orders" className="dropdown-item"><FiBox /> My Orders</Link>
+                <Link to="/profile?tab=saved" className="dropdown-item"><FaRegBookmark /> Saved Items</Link>
+                <Link to="/profile?tab=notifications" className="dropdown-item"><FiMessageSquare /> Messages</Link>
                 <div className="dropdown-item dropdown-logout" onClick={() => setShowLogoutModal(true)}>
                   <FiLogOut /> Logout
                 </div>
@@ -86,17 +100,27 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* TWO-LINE BUTTON WITH CENTERED ICON */}
-          <Link to="/profile?tab=merchant" className="nav-btn-sell">
-            <FaStore className="sell-icon" />
-            <div className="sell-text">
-              {userRole === 'BUYER' ? (
-                <>BECOME A<br/>MERCHANT</>
-              ) : (
-                <>MERCHANT<br/>DASHBOARD</>
-              )}
-            </div>
-          </Link>
+          {/* Dynamic Action Button (Changes to "Back to Homepage" on Profile page) */}
+          {isProfilePage ? (
+            <Link to="/home" className="nav-btn-sell">
+              <FiHome className="sell-icon" />
+              <div className="sell-text">
+                BACK TO<br/>HOMEPAGE
+              </div>
+            </Link>
+          ) : (
+            <Link to="/profile?tab=merchant" className="nav-btn-sell">
+              <FaStore className="sell-icon" />
+              <div className="sell-text">
+                {userRole === 'BUYER' ? (
+                  <>BECOME A<br/>MERCHANT</>
+                ) : (
+                  <>MERCHANT<br/>DASHBOARD</>
+                )}
+              </div>
+            </Link>
+          )}
+
         </div>
       </div>
 
