@@ -26,6 +26,17 @@ public class DataSeeder {
                 adminRepository.save(masterAdmin);
                 System.out.println("✅ Master Admin account successfully generated.");
             }
+
+            if (adminRepository.findByEmail("victor@babcock.edu.ng").isEmpty()) {
+                Admin secondAdmin = new Admin();
+                secondAdmin.setFullName("Victor - Super Admin");
+                secondAdmin.setEmail("victor@babcock.edu.ng"); // Change to desired email
+                secondAdmin.setPassword(passwordEncoder.encode("admin123")); // Change to desired password
+                secondAdmin.setRole("ADMIN");
+
+                adminRepository.save(secondAdmin);
+                System.out.println("✅ Victor's Admin account successfully generated.");
+            }
         };
     }
 }
