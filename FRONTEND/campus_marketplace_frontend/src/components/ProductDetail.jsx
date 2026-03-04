@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiChevronLeft, FiChevronRight, FiTag, FiInfo, FiBox, FiMessageCircle, FiArrowLeft, FiImage, FiChevronRight as FiArrowRight } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiTag, FiInfo, FiBox, FiMessageCircle, FiArrowLeft, FiImage, FiChevronRight as FiArrowRight, FiX } from 'react-icons/fi';
 import { FaStore } from 'react-icons/fa';
 import Navbar from './Navbar';
 import '../App.css';
@@ -23,8 +23,9 @@ export default function ProductDetail() {
 
     const [loading, setLoading] = useState(true);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-
+    
+    // --- GALLERY UI STATES ---
+    const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
     const getImageUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
 
@@ -59,6 +60,40 @@ export default function ProductDetail() {
         fetchData();
     }, [id]);
 
+    const imagesList = product?.imagePaths && product.imagePaths.length > 0 ? product.imagePaths : (product?.imagePath ? [product.imagePath] : []);
+
+    // --- GALLERY NAVIGATION LOGIC ---
+    const openGallery = (index) => {
+        setCurrentImageIndex(index);
+        setIsGalleryOpen(true);
+    };
+
+    const closeGallery = () => setIsGalleryOpen(false);
+
+    const nextImage = (e) => {
+        if (e) e.stopPropagation();
+        setCurrentImageIndex((prev) => (prev + 1) % imagesList.length);
+    };
+
+    const prevImage = (e) => {
+        if (e) e.stopPropagation();
+        setCurrentImageIndex((prev) => (prev - 1 + imagesList.length) % imagesList.length);
+    };
+
+    // Keyboard navigation (Esc to close, Arrows to navigate)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!isGalleryOpen) return;
+            if (e.key === 'Escape') closeGallery();
+            if (e.key === 'ArrowRight') nextImage();
+            if (e.key === 'ArrowLeft') prevImage();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+        // eslint-disable-next-line
+    }, [isGalleryOpen, imagesList.length]);
+
+
     if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Loading product details...</div>;
 
     if (!product) return (
@@ -70,8 +105,6 @@ export default function ProductDetail() {
             </div>
         </div>
     );
-
-    const imagesList = product.imagePaths && product.imagePaths.length > 0 ? product.imagePaths : (product.imagePath ? [product.imagePath] : []);
 
     // --- FILTERING ENGINE FOR "MORE" CARDS ---
     // Grabs max 4 products from the same category, excluding the one we are looking at
@@ -90,7 +123,7 @@ export default function ProductDetail() {
     const renderMiniCard = (p) => {
         const thumbPath = (p.imagePaths && p.imagePaths.length > 0) ? p.imagePaths[0] : p.imagePath;
         return (
-            <div key={p.id} className="inventory-card mini-card" onClick={() => { navigate(`/product/${p.id}`); window.scrollTo(0, 0); }}>
+            <div key={p.id} className="inventory-card mini-card" onClick={() => { navigate(`/product/${p.sku || p.id}`); window.scrollTo(0, 0); }}>
                 <div className="inventory-image-placeholder mini">
                     {thumbPath ? <img src={getImageUrl(thumbPath)} alt={p.title} /> : <FiImage size={24} color="#cbd5e1" />}
                 </div>
@@ -120,7 +153,13 @@ export default function ProductDetail() {
                                 <div className="main-image-wrapper">
                                     {imagesList.length > 0 ? (
                                         <>
-                                            <img src={getImageUrl(imagesList[currentImageIndex])} alt={product.title} className="main-image" />
+                                            <img 
+                                                src={getImageUrl(imagesList[currentImageIndex])} 
+                                                alt={product.title} 
+                                                className="main-image" 
+                                                onClick={() => openGallery(currentImageIndex)}
+                                                style={{ cursor: 'pointer' }}
+                                            />
                                             {imagesList.length > 1 && (
                                                 <>
                                                     <button className="gallery-arrow left" onClick={() => setCurrentImageIndex((prev) => (prev - 1 + imagesList.length) % imagesList.length)}><FiChevronLeft size={28} /></button>
@@ -283,6 +322,41 @@ export default function ProductDetail() {
                 </div>
 
             </div>
+
+            {/* --- FULLSCREEN IMAGE GALLERY MODAL --- */}
+            {isGalleryOpen && imagesList.length > 0 && (
+                <div className="gallery-overlay" onClick={closeGallery}>
+                
+                <button className="gallery-close" onClick={closeGallery}>
+                    <FiX size={32} />
+                </button>
+
+                {imagesList.length > 1 && (
+                    <button className="gallery-nav left" onClick={prevImage}>
+                    <FiChevronLeft size={40} />
+                    </button>
+                )}
+
+                <img 
+                    src={getImageUrl(imagesList[currentImageIndex])} 
+                    alt={`Expanded view ${currentImageIndex + 1}`}
+                    className="gallery-expanded-img"
+                    onClick={(e) => e.stopPropagation()}
+                />
+
+                {imagesList.length > 1 && (
+                    <button className="gallery-nav right" onClick={nextImage}>
+                    <FiChevronRight size={40} />
+                    </button>
+                )}
+
+                {imagesList.length > 1 && (
+                    <div className="gallery-counter">
+                    {currentImageIndex + 1} / {imagesList.length}
+                    </div>
+                )}
+                </div>
+            )}
         </div>
     );
 }
