@@ -1,7 +1,10 @@
 package com.project.campus_marketplace.controller;
 
 import com.project.campus_marketplace.model.Admin;
+import com.project.campus_marketplace.repository.StudentRepository;
 import com.project.campus_marketplace.service.AuthService;
+import com.project.campus_marketplace.service.OtpService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,16 +16,55 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Autowired
+    private OtpService otpService;
+
+    @Autowired
+    private StudentRepository studentRepository;
+
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
 
+    // --- NEW OTP REQUEST ENDPOINT ---
+    @PostMapping("/request-otp")
+    public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+
+        // 1. Enforce the Babcock Student Email Rule
+        if (email == null || !email.toLowerCase().endsWith("@student.babcock.edu.ng")) {
+            return ResponseEntity.badRequest().body("Security Error: Only @student.babcock.edu.ng emails are allowed to register.");
+        }
+
+        // 2. Check if the user already has an account
+        if (studentRepository.findByBabcockEmail(email).isPresent()) {
+            return ResponseEntity.badRequest().body("An account with this email already exists.");
+        }
+
+        // 3. Send the Email!
+        try {
+            otpService.generateAndSendOtp(email);
+            return ResponseEntity.ok("OTP sent successfully to " + email);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Failed to send verification email. Please try again later.");
+        }
+    }
+
+    // --- UPDATED REGISTER ENDPOINT ---
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody Map<String, String> payload) {
         String email = payload.get("email");
         String fullName = payload.get("fullName");
         String password = payload.get("password");
+        String otp = payload.get("otp"); // The new OTP field sent from React
 
+        // Verify the OTP before creating the account
+        if (!otpService.validateOtp(email, otp)) {
+            return ResponseEntity.badRequest().body("Error: Invalid or expired Verification Code.");
+        }
+
+        // If OTP is valid, proceed with normal registration
         String result = authService.registerStudent(email, fullName, password);
 
         if (result.startsWith("Error")) {
@@ -31,7 +73,7 @@ public class AuthController {
         return ResponseEntity.ok(result);
     }
 
-    // --- NEW LOGIN ENDPOINT ---
+    // --- LOGIN ENDPOINT ---
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody Map<String, String> payload) {
         String email = payload.get("email");
@@ -43,15 +85,10 @@ public class AuthController {
             return ResponseEntity.badRequest().body(result);
         }
 
-        // Returns the JWT Token to the frontend!
         return ResponseEntity.ok(result);
     }
 
-    // ... [Keep your existing student endpoints] ...
-
     // --- ADMIN ENDPOINTS ---
-
-
     @PostMapping("/admin/login")
     public ResponseEntity<String> loginAdmin(@RequestBody Map<String, String> credentials) {
         String email = credentials.get("email");
