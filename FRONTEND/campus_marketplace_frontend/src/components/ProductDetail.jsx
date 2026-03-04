@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiChevronLeft, FiChevronRight, FiTag, FiInfo, FiBox, FiMessageCircle, FiArrowLeft, FiImage, FiChevronRight as FiArrowRight, FiX } from 'react-icons/fi';
-import { FaStore } from 'react-icons/fa';
+import { jwtDecode } from 'jwt-decode';
+import { FiChevronLeft, FiChevronRight, FiTag, FiInfo, FiBox, FiMessageCircle, FiArrowLeft, FiImage, FiChevronRight as FiArrowRight, FiX, FiBookmark } from 'react-icons/fi';
+import { FaStore, FaBookmark } from 'react-icons/fa';
 import Navbar from './Navbar';
 import '../App.css';
 
 const generateShopSlug = (businessName, merchantId) => {
     if (!businessName) return `shop-shopid${merchantId}`;
-    // Converts "Derrick Gadgets!" to "derrick-gadgets"
     const slugified = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     return `${slugified}-shopid${merchantId}`;
 };
@@ -19,7 +19,7 @@ export default function ProductDetail() {
 
     const [allProducts, setAllProducts] = useState([]);
     const [product, setProduct] = useState(null);
-    const [merchantProfile, setMerchantProfile] = useState(null); // The floating panel data
+    const [merchantProfile, setMerchantProfile] = useState(null);
 
     const [loading, setLoading] = useState(true);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -27,22 +27,47 @@ export default function ProductDetail() {
     // --- GALLERY UI STATES ---
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
+    // --- SAVED ITEMS LOGIC ---
+    const [isSaved, setIsSaved] = useState(false);
+    const [saveLoading, setSaveLoading] = useState(false);
+
+    // Get current user ID from token
+    let currentUserId = null;
+    const token = localStorage.getItem('jwtToken');
+    if (token) {
+        try {
+            const decoded = jwtDecode(token);
+            console.log("🔍 Decoded JWT Payload:", decoded); // Look at this in your browser console!
+            
+            // Broadened check to catch the ID no matter what you named it in Java
+            currentUserId = decoded.id || decoded.studentId || decoded.userId; 
+        } catch (err) { console.error("Invalid token"); }
+    }
+
     const getImageUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                // 1. Fetch all active products
                 const res = await axios.get('http://localhost:8081/api/products');
                 const activeProducts = res.data.filter(p => p.status === 'ACTIVE');
                 setAllProducts(activeProducts);
 
-                // 2. Find current product
                 const foundProduct = activeProducts.find(p => p.sku === id || p.id.toString() === id);
                 setProduct(foundProduct);
 
-                // 3. Fetch Merchant Profile for the Sidebar
+                // Check if this product is saved by the current user
+                if (currentUserId && foundProduct && token) { // Added token check here
+                    try {
+                        const savedRes = await axios.get(`http://localhost:8081/api/saved-items/${currentUserId}`, {
+                            headers: { Authorization: `Bearer ${token}` } // <-- Add this header!
+                        });
+                        const alreadySaved = savedRes.data.some(item => item.productId === foundProduct.id);
+                        setIsSaved(alreadySaved);
+                    } catch (err) { console.error("Could not fetch saved status"); }
+                }
+
                 if (foundProduct) {
                     try {
                         const merchantRes = await axios.get(`http://localhost:8081/api/merchant/profile/shop/${foundProduct.merchantId}`);
@@ -58,11 +83,10 @@ export default function ProductDetail() {
             }
         };
         fetchData();
-    }, [id]);
+    }, [id, currentUserId]); // Added currentUserId to dependency array
 
     const imagesList = product?.imagePaths && product.imagePaths.length > 0 ? product.imagePaths : (product?.imagePath ? [product.imagePath] : []);
 
-    // --- GALLERY NAVIGATION LOGIC ---
     const openGallery = (index) => {
         setCurrentImageIndex(index);
         setIsGalleryOpen(true);
@@ -80,7 +104,33 @@ export default function ProductDetail() {
         setCurrentImageIndex((prev) => (prev - 1 + imagesList.length) % imagesList.length);
     };
 
-    // Keyboard navigation (Esc to close, Arrows to navigate)
+    const handleToggleSave = async () => {
+        if (!currentUserId || !token) {
+            alert("Please log in to save items to your wishlist.");
+            navigate('/login');
+            return;
+        }
+
+        try {
+            setSaveLoading(true);
+            const res = await axios.post('http://localhost:8081/api/saved-items/toggle', {
+                studentId: currentUserId,
+                productId: product.id
+            }, {
+                headers: { Authorization: `Bearer ${token}` } // <-- Add this header!
+            });
+            setIsSaved(res.data.saved); 
+        } catch (error) {
+            console.error("Failed to toggle saved item", error);
+            if (error.response && error.response.status === 403) {
+                alert("Your session has expired. Please log in again.");
+                navigate('/login');
+            }
+        } finally {
+            setSaveLoading(false);
+        }
+    };
+
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (!isGalleryOpen) return;
@@ -92,7 +142,6 @@ export default function ProductDetail() {
         return () => window.removeEventListener('keydown', handleKeyDown);
         // eslint-disable-next-line
     }, [isGalleryOpen, imagesList.length]);
-
 
     if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Loading product details...</div>;
 
@@ -106,12 +155,9 @@ export default function ProductDetail() {
         </div>
     );
 
-    // --- FILTERING ENGINE FOR "MORE" CARDS ---
-    // Grabs max 4 products from the same category, excluding the one we are looking at
     const categoryProducts = allProducts.filter(p => p.category === product.category && p.id !== product.id);
     const displayedCategoryProducts = categoryProducts.slice(0, 4);
 
-    // Grabs max 4 products from the same merchant, excluding the one we are looking at
     const merchantProducts = allProducts.filter(p => p.merchantId === product.merchantId && p.id !== product.id);
     const displayedMerchantProducts = merchantProducts.slice(0, 4);
 
@@ -119,7 +165,6 @@ export default function ProductDetail() {
         navigate('/home', { state: { activeCategory: product.category, activeType: product.listingType, activeSubType: product.subType } });
     };
 
-    // A reusable component for the tiny cards at the bottom
     const renderMiniCard = (p) => {
         const thumbPath = (p.imagePaths && p.imagePaths.length > 0) ? p.imagePaths[0] : p.imagePath;
         return (
@@ -140,8 +185,6 @@ export default function ProductDetail() {
             <Navbar />
 
             <div className="product-page-layout">
-
-                {/* --- MAIN LEFT CONTENT --- */}
                 <div className="product-main-content">
                     <button onClick={() => navigate('/home')} className="back-btn">
                         <FiArrowLeft size={18} /> Back to Marketplace
@@ -184,7 +227,23 @@ export default function ProductDetail() {
                             </div>
                             <div className="product-info-section">
                                 <div className="product-header">
-                                    <h1 className="product-title">{product.title}</h1>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                                        <h1 className="product-title">{product.title}</h1>
+                                        
+                                        <button 
+                                            onClick={handleToggleSave} 
+                                            disabled={saveLoading}
+                                            style={{
+                                                background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', 
+                                                padding: '10px 15px', display: 'flex', alignItems: 'center', gap: '8px',
+                                                cursor: 'pointer', color: isSaved ? '#16a34a' : '#64748b',
+                                                fontWeight: '600', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                            }}
+                                        >
+                                            {isSaved ? <FaBookmark size={18} /> : <FiBookmark size={18} />}
+                                            {isSaved ? 'Saved' : 'Save Item'}
+                                        </button>
+                                    </div>
                                     <div className="product-price">₦{product.price.toLocaleString()}</div>
                                 </div>
                                 <div className="product-meta-tags">
@@ -207,13 +266,10 @@ export default function ProductDetail() {
                         </div>
                     </div>
 
-                    {/* --- MORE FROM THIS CATEGORY --- */}
                     <div className="more-section">
                         <h3 className="more-section-title">More from {product.category === 'Other...' ? product.customCategory : product.category}</h3>
                         <div className="more-cards-row">
                             {displayedCategoryProducts.map(p => renderMiniCard(p))}
-
-                            {/* The "More" Card shifts left naturally using flexbox */}
                             <div className="inventory-card mini-card more-card" onClick={handleMoreCategoryClick}>
                                 <div className="more-card-content">
                                     <span>More</span>
@@ -223,12 +279,10 @@ export default function ProductDetail() {
                         </div>
                     </div>
 
-                    {/* --- MORE FROM THIS MERCHANT --- */}
                     <div className="more-section">
                         <h3 className="more-section-title">More from this Merchant</h3>
                         <div className="more-cards-row">
                             {displayedMerchantProducts.length > 0 ? displayedMerchantProducts.map(p => renderMiniCard(p)) : <p style={{ color: '#64748b', fontSize: '14px', fontStyle: 'italic', padding: '10px 0' }}>No other products listed yet.</p>}
-
                             {displayedMerchantProducts.length > 0 && (
                                 <div className="inventory-card mini-card more-card" onClick={() => navigate(`/shop/${generateShopSlug(merchantProfile?.businessName, product.merchantId)}`)}>
                                     <div className="more-card-content">
@@ -239,14 +293,10 @@ export default function ProductDetail() {
                             )}
                         </div>
                     </div>
-
                 </div>
 
-                {/* --- FLOATING RIGHT SIDEBAR (MERCHANT PANEL) --- */}
                 <div className="product-sidebar">
                     <div className="merchant-preview-card">
-
-                        {/* Profile Header */}
                         <div className="merchant-preview-header">
                             {merchantProfile?.logoPath ? (
                                 <img src={getImageUrl(merchantProfile.logoPath)} alt="Shop Logo" className="merchant-preview-logo" />
@@ -259,7 +309,6 @@ export default function ProductDetail() {
                             </div>
                         </div>
 
-                        {/* Basic Details */}
                         <div className="merchant-preview-details">
                             <div className="detail-row">
                                 <span className="detail-label">Merchant:</span>
@@ -270,7 +319,6 @@ export default function ProductDetail() {
                                 <span className="detail-value">{merchantProfile?.publicPhone || "Not provided"}</span>
                             </div>
 
-                            {/* Main Products/Services */}
                             {merchantProfile?.mainProducts && (
                                 <div className="detail-row" style={{ flexDirection: 'column', gap: '4px', marginTop: '5px' }}>
                                     <span className="detail-label">Main Products/Services:</span>
@@ -281,7 +329,6 @@ export default function ProductDetail() {
                             )}
                         </div>
 
-                        {/* Location Details (Conditionally Rendered) */}
                         <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '15px', marginTop: '15px', marginBottom: '25px' }}>
                             <h4 style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 10px 0' }}>
                                 Location Details
@@ -298,7 +345,6 @@ export default function ProductDetail() {
                                     <span className="detail-value">{merchantProfile?.primaryLocation || "Not specified"}</span>
                                 </div>
 
-                                {/* Conditional Specific Address based on Primary Location */}
                                 {merchantProfile?.primaryLocation === 'Campus Hostels' && merchantProfile?.specificAddress && (
                                     <div className="detail-row">
                                         <span className="detail-label">Hall:</span>
@@ -320,10 +366,8 @@ export default function ProductDetail() {
                         </button>
                     </div>
                 </div>
-
             </div>
 
-            {/* --- FULLSCREEN IMAGE GALLERY MODAL --- */}
             {isGalleryOpen && imagesList.length > 0 && (
                 <div className="gallery-overlay" onClick={closeGallery}>
                 

@@ -24,10 +24,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/merchant/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll() // <-- ADD THIS
                         .requestMatchers("/uploads/**").permitAll()   // <-- ADD THIS
+                        .requestMatchers("/api/saved-items/**").permitAll()
                         .requestMatchers("/api/products/**").permitAll()
                         .requestMatchers("/api/merchant/profile/shop/**").permitAll()
                         .requestMatchers("/error").permitAll()

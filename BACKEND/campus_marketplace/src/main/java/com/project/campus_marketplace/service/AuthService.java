@@ -60,7 +60,7 @@ public class AuthService {
             return "Error: Invalid password.";
         }
 
-        return jwtUtil.generateToken(student.getBabcockEmail(), student.getRole(), student.getFullName());
+        return jwtUtil.generateToken(student.getBabcockEmail(), "BUYER", student.getFullName(), student.getId());
     }
 
     public String registerAdmin(Admin admin) {
@@ -90,6 +90,6 @@ public class AuthService {
         }
 
         // Generate the JWT Token specifically for the Admin!
-        return jwtUtil.generateToken(admin.getEmail(), admin.getRole(), admin.getFullName());
+        return jwtUtil.generateToken(admin.getEmail(), "ADMIN", admin.getFullName(), admin.getId());
     }
 }
