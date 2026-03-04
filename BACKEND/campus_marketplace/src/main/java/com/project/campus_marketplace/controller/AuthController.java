@@ -31,9 +31,12 @@ public class AuthController {
     public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> request) {
         String email = request.get("email");
 
-        // 1. Enforce the Babcock Student Email Rule
-        if (email == null || !email.toLowerCase().endsWith("@student.babcock.edu.ng")) {
-            return ResponseEntity.badRequest().body("Security Error: Only @student.babcock.edu.ng emails are allowed to register.");
+        // 1. Enforce the Babcock Email Rule (Students and Staff)
+        boolean isStudent = email != null && email.toLowerCase().endsWith("@student.babcock.edu.ng");
+        boolean isStaff = email != null && email.toLowerCase().endsWith("@babcock.edu.ng");
+
+        if (!isStudent && !isStaff) {
+            return ResponseEntity.badRequest().body("Security Error: Only official Babcock University emails are allowed to register.");
         }
 
         // 2. Check if the user already has an account
