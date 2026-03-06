@@ -60,7 +60,7 @@ public class AuthService {
             return "Error: Invalid password.";
         }
 
-        return jwtUtil.generateToken(student.getBabcockEmail(), "BUYER", student.getFullName(), student.getId());
+        return jwtUtil.generateToken(student.getBabcockEmail(), student.getRole(), student.getFullName(), student.getId());
     }
 
     public String registerAdmin(Admin admin) {

@@ -3230,3 +3230,348 @@ textarea.profile-input {
 }
 
 /* --- FULLSCREEN IMAGE GALLERY ENDS --- */
+
+
+
+
+
+
+/* --- MERCHANT SHOP PAGE BANNER --- */
+.shop-banner-container {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: white;
+  padding: 40px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.shop-banner-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.shop-profile-pic {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  flex-shrink: 0;
+}
+
+.shop-profile-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shop-banner-text h1 {
+  margin: 0 0 5px 0;
+  font-size: 28px;
+  letter-spacing: -0.5px;
+}
+
+.shop-tagline {
+  color: #cbd5e1;
+  font-size: 15px;
+  margin: 0 0 15px 0;
+  font-style: italic;
+}
+
+.shop-meta-row {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: #94a3b8;
+  flex-wrap: wrap;
+}
+
+.shop-meta-row strong {
+  color: #f8fafc;
+}
+
+@media (max-width: 768px) {
+  .shop-banner-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+  .shop-meta-row {
+    justify-content: center;
+  }
+}
+
+/* --- MERCHANT SHOP PAGE BANNER ENDS --- */
+
+
+
+
+
+
+/* --- MERCHANT SHOP PAGE: SIDEBAR FILTERS --- */
+.shop-filter-group {
+  margin-bottom: 20px;
+}
+
+.shop-filter-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Base style for inputs and select dropdowns */
+.shop-filter-input {
+  width: 100%;
+  padding: 12px 15px;
+  font-size: 14px;
+  color: #1e293b;
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.shop-filter-input:focus {
+  background-color: white;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.1);
+}
+
+/* Search Wrapper styling */
+.shop-search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.shop-search-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 18px;
+}
+
+.shop-filter-input.with-icon {
+  padding-left: 45px; /* Makes room for the search icon */
+}
+
+/* Min-Max Price Row */
+.shop-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Scrollable Container for the Taxonomy Categories */
+.shop-taxonomy-container {
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 5px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+/* The Clear Button */
+.shop-filter-clear-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: #f1f5f9;
+  color: #475569;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.shop-filter-clear-btn:hover {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+
+
+
+
+
+/* --- GLOBALLY STYLED FILTER CONTROLS (MERCHANT SHOP & HOME) --- */
+
+.filter-group {
+  margin-bottom: 22px;
+}
+
+.filter-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 1. The Search Box */
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-input-wrapper .search-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  font-size: 18px;
+}
+
+.search-input-wrapper input {
+  width: 100%;
+  padding: 14px 14px 14px 42px; /* Extra left padding for the icon */
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.search-input-wrapper input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.1);
+}
+
+/* 2. The Type Toggle Buttons (All | Items | Services) */
+.type-toggle-buttons {
+  display: flex;
+  gap: 5px;
+  background: #f1f5f9;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.type-toggle-buttons button {
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.type-toggle-buttons button:hover {
+  color: #1e293b;
+  background: #e2e8f0;
+}
+
+.type-toggle-buttons button.active {
+  background: white;
+  color: var(--color-primary);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 3. The Dropdowns (Category & Condition) */
+.filter-group select {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1e293b;
+  outline: none;
+  background-color: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  appearance: auto; /* Restores the native dropdown arrow if it was missing */
+}
+
+.filter-group select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.1);
+}
+
+/* 4. Price Range Inputs */
+.price-inputs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.price-inputs input {
+  flex: 1;
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  text-align: center;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.price-inputs input:focus {
+  border-color: var(--color-primary);
+}
+
+.price-inputs span {
+  color: #64748b;
+  font-weight: bold;
+}
+
+/* 5. Clear Filters Button */
+.btn-outline {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: white;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  color: #475569;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.btn-outline:hover {
+  background: #fef2f2; /* Very faint red */
+  color: #ef4444; /* Bright red text */
+  border-color: #ef4444;
+}
+
+/* 6. Right Side Sorting Dropdown */
+.sort-dropdown {
+  padding: 10px 15px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background: white;
+  color: #1e293b;
+  cursor: pointer;
+}
+
