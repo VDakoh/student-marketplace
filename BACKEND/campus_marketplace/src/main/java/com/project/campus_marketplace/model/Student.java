@@ -26,6 +26,27 @@ public class Student {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "campus")
+    private String campus;
+
+    @Column(name = "primary_location")
+    private String primaryLocation;
+
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
+    @Column(name = "specific_address")
+    private String specificAddress;
+
+    @Column(name = "additional_directions")
+    private String additionalDirections;
+
+
+
+
     // Getters and Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -44,4 +65,22 @@ public class Student {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+    public String getCampus() { return campus; }
+    public void setCampus(String campus) { this.campus = campus; }
+
+    public String getPrimaryLocation() { return primaryLocation; }
+    public void setPrimaryLocation(String primaryLocation) { this.primaryLocation = primaryLocation; }
+
+    public String getProfileImageUrl() { return profileImageUrl; }
+    public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
+
+    public String getSpecificAddress() { return specificAddress; }
+    public void setSpecificAddress(String specificAddress) { this.specificAddress = specificAddress; }
+
+    public String getAdditionalDirections() { return additionalDirections; }
+    public void setAdditionalDirections(String additionalDirections) { this.additionalDirections = additionalDirections; }
 }

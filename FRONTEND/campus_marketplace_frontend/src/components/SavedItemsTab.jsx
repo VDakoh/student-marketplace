@@ -94,7 +94,7 @@ export default function SavedItemsTab() {
 
   return (
     <div>
-      <h2 style={{ margin: '0 0 5px 0', color: '#1e293b', fontSize: '22px' }}>Saved Items</h2>
+      <h2 className='user-main-header'>Saved Items</h2>
       <p style={{ color: '#64748b', marginBottom: '25px', fontSize: '14px' }}>Items you've bookmarked for later.</p>
 
       <div className="inventory-grid">

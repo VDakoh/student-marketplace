@@ -1,33 +1,194 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
+import { useNavigate } from 'react-router-dom';
+import Cropper from 'react-easy-crop';
+import { getCroppedImg } from '../utils/cropImage'; 
 import '../App.css';
 
 export default function AccountSettingsTab({ email, userRole }) {
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
   const [activeTab, setActiveTab] = useState('personal');
   const [hasChanges, setHasChanges] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   
-  // State for Account Settings
+  // --- REACT-EASY-CROP STATES ---
+  const [upImg, setUpImg] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
+  
   const [userData, setUserData] = useState({
     fullName: '', phone: '',
     campus: 'Main Campus', primaryLocation: '', specificAddress: '', additionalDirections: '',
     currentPassword: '', newPassword: '', confirmPassword: ''
   });
 
+  const getImageUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem('jwtToken');
+      if (!token) return;
+
+      try {
+        const decoded = jwtDecode(token);
+        const userId = decoded.id || decoded.studentId || decoded.userId;
+
+        const res = await axios.get(`http://localhost:8081/api/students/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const dbUser = res.data;
+        setProfileImage(dbUser.profileImageUrl);
+        
+        setUserData(prev => ({
+          ...prev,
+          fullName: dbUser.fullName || '',
+          phone: dbUser.phoneNumber || '', 
+          campus: dbUser.campus || 'Main Campus',
+          primaryLocation: dbUser.primaryLocation || '',
+          specificAddress: dbUser.specificAddress || '',
+          additionalDirections: dbUser.additionalDirections || ''
+        }));
+      } catch (error) {
+        console.error("Failed to load user profile:", error);
+      }
+    };
+    fetchUserData();
+  }, []);
+
   const handleChange = (e) => {
     setUserData({ ...userData, [e.target.name]: e.target.value });
     setHasChanges(true);
   };
 
-  const handleSave = () => {
-    alert("Profile settings saved! (API coming soon)");
-    setHasChanges(false);
+  // --- CROPPER LOGIC ---
+  const onSelectFile = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => setUpImg(reader.result));
+      reader.readAsDataURL(e.target.files[0]);
+      setShowCropper(true);
+      e.target.value = ''; 
+    }
+  };
+
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const handleCropUpload = async () => {
+    if (!croppedAreaPixels || !upImg) return;
+    
+    try {
+      setIsUploading(true);
+      const croppedBlob = await getCroppedImg(upImg, croppedAreaPixels);
+      
+      const token = localStorage.getItem('jwtToken');
+      const decoded = jwtDecode(token);
+      const userId = decoded.id || decoded.studentId || decoded.userId;
+
+      const croppedFile = new File([croppedBlob], 'profile.jpg', { type: 'image/jpeg' });
+      const formData = new FormData();
+      formData.append('file', croppedFile);
+
+      const res = await axios.post(`http://localhost:8081/api/students/${userId}/profile-image`, formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      setProfileImage(res.data.imageUrl);
+      setShowCropper(false);
+    } catch (error) {
+      console.error("Image upload failed", error);
+      alert("Failed to upload image.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!window.confirm("Are you sure? This will permanently delete your account and all associated data.")) return;
+
+    const token = localStorage.getItem('jwtToken');
+    const decoded = jwtDecode(token);
+    const userId = decoded.id || decoded.studentId || decoded.userId;
+
+    try {
+      await axios.delete(`http://localhost:8081/api/students/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      localStorage.removeItem('jwtToken');
+      alert("Your account has been deactivated.");
+      navigate('/login');
+    } catch (error) {
+      console.error("Failed to deactivate account", error);
+      alert("An error occurred while deactivating your account.");
+    }
+  };
+
+  const handleSave = async () => {
+    const token = localStorage.getItem('jwtToken');
+    if (!token) return;
+    
+    const decoded = jwtDecode(token);
+    const userId = decoded.id || decoded.studentId || decoded.userId;
+
+    try {
+      if (activeTab === 'personal') {
+        await axios.put(`http://localhost:8081/api/students/${userId}/basic-info`, {
+          fullName: userData.fullName,
+          phoneNumber: userData.phone,
+          campus: userData.campus,
+          primaryLocation: userData.primaryLocation,
+          specificAddress: userData.specificAddress,
+          additionalDirections: userData.additionalDirections
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        alert("Personal profile settings saved successfully!");
+        setHasChanges(false);
+
+      } else if (activeTab === 'security') {
+        if (userData.newPassword !== userData.confirmPassword) {
+          alert("New passwords do not match!");
+          return;
+        }
+        if (userData.newPassword.length < 8) {
+          alert("New password must be at least 8 characters long.");
+          return;
+        }
+
+        await axios.put(`http://localhost:8081/api/students/${userId}/password`, {
+          currentPassword: userData.currentPassword,
+          newPassword: userData.newPassword
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        alert("Password updated successfully! Please log in again.");
+        localStorage.removeItem('jwtToken');
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+      alert(error.response?.data || "Failed to save your settings. Please try again.");
+    }
   };
 
   return (
     <div className="animation-fade-in" style={{ paddingBottom: '80px' }}>
       
-      {/* HEADER ZONE */}
-      <div style={{ position: 'sticky', top: 0, backgroundColor: '#f8fafc', zIndex: 10, paddingTop: '40px', paddingBottom: '1px' }}>
-        <h2 style={{ margin: '0 0 20px 0' }}>Account <span>Settings</span></h2>
+      <div className="account-settings-header">
+        <h2 className="account-settings-title">Account <span>Settings</span></h2>
         
         <div className="dashboard-sub-tabs">
           <div className={`dashboard-sub-tab ${activeTab === 'personal' ? 'active' : ''}`} onClick={() => setActiveTab('personal')}>
@@ -39,20 +200,34 @@ export default function AccountSettingsTab({ email, userRole }) {
         </div>
       </div>
 
-      {/* --- TAB 1: PERSONAL INFO --- */}
       {activeTab === 'personal' && (
         <div className="animation-fade-in">
           
-          {/* Card A: Basic Details */}
           <div className="dashboard-section-card">
-            <h3>Card A: Basic Details</h3>
+            <h3 className="section-card-title">Basic Details</h3>
+            
             <div className="profile-form-grid">
-              <div className="profile-form-group full-width" style={{ alignItems: 'center', marginBottom: '10px' }}>
-                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', cursor: 'pointer', overflow: 'hidden' }}>
-                  👤
+              
+              <div className="profile-pic-group">
+                <div className="profile-pic-circle" onClick={() => fileInputRef.current.click()}>
+                  {profileImage ? (
+                    <img src={getImageUrl(profileImage)} alt="Profile" />
+                  ) : (
+                    <span>👤</span>
+                  )}
+                  {isUploading && <div className="profile-pic-uploading">Uploading...</div>}
                 </div>
-                <span style={{ fontSize: '13px', color: 'var(--color-primary)', marginTop: '10px', cursor: 'pointer', fontWeight: 'bold' }}>Change Photo</span>
+                
+                <div className={`profile-role-badge ${userRole === 'MERCHANT' ? 'merchant' : 'buyer'}`}>
+                  {userRole}
+                </div>
+                
+                <span className="profile-pic-change-text" onClick={() => fileInputRef.current.click()}>
+                  Change Photo
+                </span>
+                <input type="file" accept="image/*" ref={fileInputRef} className="hidden-input" onChange={onSelectFile} />
               </div>
+
               <div className="profile-form-group">
                 <label className="profile-label">Full Name</label>
                 <input type="text" name="fullName" className="profile-input" value={userData.fullName} onChange={handleChange} placeholder="e.g., John Doe" />
@@ -63,15 +238,14 @@ export default function AccountSettingsTab({ email, userRole }) {
               </div>
               <div className="profile-form-group full-width">
                 <label className="profile-label">Student Email (Read-Only)</label>
-                <input type="email" value={email} disabled className="profile-input" style={{ backgroundColor: '#f1f5f9', color: '#64748b' }} />
+                <input type="email" value={email} disabled className="profile-input input-disabled" />
               </div>
             </div>
           </div>
 
-          {/* Card B: Default Delivery Address (REUSED ENGINE) */}
           <div className="dashboard-section-card">
-            <h3>Card B: Default Delivery Address</h3>
-            <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '20px' }}>Set your primary location for easier meetups and deliveries.</p>
+            <h3 className="section-card-title">Default Delivery Address</h3>
+            <p className="section-card-desc">Set your primary location for easier meetups and deliveries.</p>
             <div className="profile-form-grid">
               <div className="profile-form-group">
                 <label className="profile-label">Campus</label>
@@ -91,7 +265,6 @@ export default function AccountSettingsTab({ email, userRole }) {
                 </select>
               </div>
 
-              {/* DYNAMIC LOCATION LOGIC */}
               {userData.primaryLocation === 'Hall of Residence' && (
                 <>
                   <div className="profile-form-group full-width">
@@ -132,11 +305,10 @@ export default function AccountSettingsTab({ email, userRole }) {
         </div>
       )}
 
-      {/* --- TAB 2: SECURITY --- */}
       {activeTab === 'security' && (
         <div className="animation-fade-in">
           <div className="dashboard-section-card">
-            <h3>Card A: Login Credentials</h3>
+            <h3 className="section-card-title">Login Credentials</h3>
             <div className="profile-form-grid">
               <div className="profile-form-group full-width">
                 <label className="profile-label">Current Password</label>
@@ -151,24 +323,75 @@ export default function AccountSettingsTab({ email, userRole }) {
                 <input type="password" name="confirmPassword" className="profile-input" value={userData.confirmPassword} onChange={handleChange} />
               </div>
             </div>
-            <button className="btn-save" style={{ marginTop: '20px' }} onClick={handleSave}>Update Password</button>
+            <button className="btn-save btn-update-password" onClick={handleSave}>Update Password</button>
           </div>
           
-          <div className="dashboard-section-card" style={{ border: '1px solid #fecaca', backgroundColor: '#fef2f2' }}>
-            <h3 style={{ color: '#ef4444', borderBottomColor: '#fecaca' }}>Danger Zone</h3>
-            <p style={{ color: '#7f1d1d', fontSize: '14px', marginBottom: '15px' }}>Deactivating your account will remove your profile and active orders from the platform.</p>
-            <button className="btn-remove-image" style={{ width: 'auto' }}>Deactivate Account</button>
+          <div className="dashboard-section-card danger-zone">
+            <h3 className="danger-title">Danger Zone</h3>
+            <p className="danger-desc">Deactivating your account will remove your profile and active orders from the platform. This action cannot be undone.</p>
+            <button className="btn-remove-image btn-auto-width" onClick={handleDeactivate}>Deactivate Account</button>
           </div>
         </div>
       )}
 
-      {/* STICKY SAVE BAR */}
-      {hasChanges && (
+      {hasChanges && activeTab === 'personal' && (
         <div className="sticky-save-bar">
           <span className="sticky-save-text">You have unsaved changes.</span>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button className="btn-discard" onClick={() => setHasChanges(false)}>Discard</button>
             <button className="btn-save" onClick={handleSave}>Save Changes</button>
+          </div>
+        </div>
+      )}
+
+      {/* --- REACT-EASY-CROP MODAL (USING YOUR EXISTING CLASSES) --- */}
+      {showCropper && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-card" style={{ width: '90%', maxWidth: '600px', padding: 0, overflow: 'hidden' }}>
+            
+            <div className="modal-card-header" style={{ padding: '20px', borderBottom: '1px solid #e2e8f0' }}>
+              <h3 style={{ margin: 0, color: 'white' }}>Crop Profile Image</h3>
+              <button className="modal-close-btn" onClick={() => setShowCropper(false)}>&times;</button>
+            </div>
+            
+            <div className="crop-container">
+              <Cropper
+                image={upImg}
+                crop={crop}
+                zoom={zoom}
+                aspect={1} 
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+            
+            <div className="controls">
+              <div className="slider-group">
+                <span className="slider-label">Zoom</span>
+                <input 
+                  type="range" 
+                  value={zoom} 
+                  min={1} 
+                  max={3} 
+                  step={0.1} 
+                  aria-labelledby="Zoom"
+                  onChange={(e) => setZoom(e.target.value)} 
+                  style={{ flex: 1,  padding: 0}}
+                  className="profile-input"
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button className="btn-discard" onClick={() => setShowCropper(false)} style={{ flex: 1, border: '1px solid #e2e8f0', borderRadius: '6px' }}>Cancel</button>
+                <button className="btn-save" onClick={handleCropUpload} disabled={isUploading} style={{ flex: 1}}>
+                  {isUploading ? 'Uploading...' : 'Crop & Save'}
+                </button>
+              </div>
+            </div>
+            
           </div>
         </div>
       )}

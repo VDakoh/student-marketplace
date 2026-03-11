@@ -27,9 +27,10 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/merchant/**").permitAll()
-                        .requestMatchers("/api/admin/**").permitAll() // <-- ADD THIS
-                        .requestMatchers("/uploads/**").permitAll()   // <-- ADD THIS
+                        .requestMatchers("/api/admin/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/saved-items/**").permitAll()
+                        .requestMatchers("/api/students/**").permitAll()
                         .requestMatchers("/api/products/**").permitAll()
                         .requestMatchers("/api/merchant/profile/shop/**").permitAll()
                         .requestMatchers("/error").permitAll()

@@ -12,6 +12,9 @@
   --color-accent-dark: #b5952f;
   /* Darker Gold for hover states */
 
+  --color-accent-light: #d2a81e;
+  /* Darker Gold for hover states */
+
   --color-background: #f4f7f6;
   /* Light gray/blue app background */
   --color-surface: #ffffff;
@@ -3575,3 +3578,209 @@ textarea.profile-input {
   cursor: pointer;
 }
 
+
+
+
+.user-main-header{ 
+  margin: 0px 0 5px 0; 
+  padding-top: 40px;
+  color: #1e293b; 
+  font-size: 22px; 
+}
+
+
+
+
+
+
+/* =========================================
+   ACCOUNT SETTINGS TAB & CROPPER MODAL
+========================================= */
+
+.account-settings-header {
+  position: sticky;
+  top: 0;
+  background-color: #f8fafc;
+  z-index: 10;
+  padding-top: 40px;
+  padding-bottom: 1px;
+}
+
+.account-settings-title {
+  margin: 0 0 20px 0;
+}
+
+.section-card-title {
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.section-card-desc {
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+/* Profile Picture Layout */
+.profile-pic-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+  grid-column: 1 / -1; /* Ensures it spans full width in a grid */
+}
+
+.profile-pic-circle {
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 50px;
+  cursor: pointer;
+  overflow: hidden;
+  border: 5px solid white;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.profile-pic-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-pic-uploading {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255,255,255,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.profile-role-badge {
+  margin-top: -18px;
+  z-index: 2;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 3px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  width: 180px;
+  text-align: center;
+}
+
+.profile-role-badge.merchant {
+  background-color: var(--color-primary);
+  color: var(--color-accent-light);
+}
+
+.profile-role-badge.buyer {
+  background-color: var(--color-primary);
+  color: var(--color-accent-light);
+}
+
+.profile-pic-change-text {
+  font-size: 15px;
+  color: var(--color-primary);
+  margin-top: 15px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.input-disabled {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.btn-update-password {
+  margin-top: 20px;
+}
+
+/* Danger Zone Overrides */
+.dashboard-section-card.danger-zone {
+  border: 1px solid #fecaca;
+  background-color: #fef2f2;
+}
+
+.danger-title {
+  color: #ef4444;
+  border-bottom: 1px solid #fecaca;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.danger-desc {
+  color: #7f1d1d;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.btn-auto-width {
+  width: auto;
+}
+
+/* React-Easy-Crop Modal Layout */
+.cropper-modal-card {
+  width: 90%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cropper-modal-title {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #1e293b;
+}
+
+.cropper-container {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  background-color: #333;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cropper-controls {
+  margin-top: 20px;
+}
+
+.cropper-label {
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.cropper-slider {
+  width: 100%;
+}
+
+.cropper-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 25px;
+}
+
+.cropper-actions .btn-discard,
+.cropper-actions .btn-save {
+  flex: 1;
+  margin-top: 0;
+}
+
+.hidden-input {
+  display: none;
+}
