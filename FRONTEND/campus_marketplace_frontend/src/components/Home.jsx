@@ -3,7 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { FiSearch, FiList, FiChevronRight, FiChevronDown, FiGrid, FiImage, FiFilter, FiX } from 'react-icons/fi';
 import Navbar from './Navbar';
+import './Footer';
 import '../App.css';
+import Footer from './Footer';
 
 const TAXONOMY = {
   ITEM: {
@@ -382,6 +384,7 @@ export default function Home() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   );
 }

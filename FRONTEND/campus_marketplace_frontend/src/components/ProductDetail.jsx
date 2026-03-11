@@ -31,15 +31,11 @@ export default function ProductDetail() {
     const [isSaved, setIsSaved] = useState(false);
     const [saveLoading, setSaveLoading] = useState(false);
 
-    // Get current user ID from token
     let currentUserId = null;
     const token = localStorage.getItem('jwtToken');
     if (token) {
         try {
             const decoded = jwtDecode(token);
-            console.log("🔍 Decoded JWT Payload:", decoded); // Look at this in your browser console!
-            
-            // Broadened check to catch the ID no matter what you named it in Java
             currentUserId = decoded.id || decoded.studentId || decoded.userId; 
         } catch (err) { console.error("Invalid token"); }
     }
@@ -57,11 +53,10 @@ export default function ProductDetail() {
                 const foundProduct = activeProducts.find(p => p.sku === id || p.id.toString() === id);
                 setProduct(foundProduct);
 
-                // Check if this product is saved by the current user
-                if (currentUserId && foundProduct && token) { // Added token check here
+                if (currentUserId && foundProduct && token) { 
                     try {
                         const savedRes = await axios.get(`http://localhost:8081/api/saved-items/${currentUserId}`, {
-                            headers: { Authorization: `Bearer ${token}` } // <-- Add this header!
+                            headers: { Authorization: `Bearer ${token}` } 
                         });
                         const alreadySaved = savedRes.data.some(item => item.productId === foundProduct.id);
                         setIsSaved(alreadySaved);
@@ -83,7 +78,7 @@ export default function ProductDetail() {
             }
         };
         fetchData();
-    }, [id, currentUserId]); // Added currentUserId to dependency array
+    }, [id, currentUserId]); 
 
     const imagesList = product?.imagePaths && product.imagePaths.length > 0 ? product.imagePaths : (product?.imagePath ? [product.imagePath] : []);
 
@@ -117,7 +112,7 @@ export default function ProductDetail() {
                 studentId: currentUserId,
                 productId: product.id
             }, {
-                headers: { Authorization: `Bearer ${token}` } // <-- Add this header!
+                headers: { Authorization: `Bearer ${token}` } 
             });
             setIsSaved(res.data.saved); 
         } catch (error) {
@@ -131,6 +126,31 @@ export default function ProductDetail() {
         }
     };
 
+    // --- THE INQUIRY FLOW ---
+    const handleMessageMerchant = () => {
+        if (!currentUserId || !token) {
+            alert("Please log in to message the merchant.");
+            navigate('/login');
+            return;
+        }
+        
+        if (currentUserId === product.merchantId) {
+            alert("You cannot message yourself. This is your own product!");
+            return;
+        }
+
+        const inquiryMsg = `Hello ${merchantProfile?.merchantName || 'there'}, I saw your listing for "${product.title}" and would like to make an inquiry. Is it still available?`;
+        
+        navigate('/profile?tab=inbox', {
+            state: {
+                startChatWith: product.merchantId,
+                merchantName: merchantProfile?.businessName || `Merchant #${product.merchantId}`,
+                merchantFullName: merchantProfile?.merchantName || "Verified Merchant", // <-- Added this line!
+                prefillMessage: inquiryMsg
+            }
+        });
+    };
+
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (!isGalleryOpen) return;
@@ -140,7 +160,6 @@ export default function ProductDetail() {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-        // eslint-disable-next-line
     }, [isGalleryOpen, imagesList.length]);
 
     if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Loading product details...</div>;
@@ -262,6 +281,15 @@ export default function ProductDetail() {
                                         <p>{product.description}</p>
                                     </div>
                                 </div>
+
+                                {/* --- NEW ACTION BUTTON ZONE --- */}
+                                <div className="product-actions-box">
+                                    <button className="btn-contact-merchant" onClick={handleMessageMerchant}>
+                                        <FiMessageCircle size={22} /> Message Merchant
+                                    </button>
+                                    <p className="action-hint">Negotiate prices and arrange delivery directly through your inbox.</p>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -361,7 +389,7 @@ export default function ProductDetail() {
                             </div>
                         </div>
 
-                        <button className="btn-contact-merchant" style={{ padding: '15px', fontSize: '15px' }} onClick={() => navigate(`/shop/${generateShopSlug(merchantProfile?.businessName, product.merchantId)}`)}>
+                        <button className="btn-outline" style={{ width: '100%' }} onClick={() => navigate(`/shop/${generateShopSlug(merchantProfile?.businessName, product.merchantId)}`)}>
                             Visit Merchant's Shop
                         </button>
                     </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
-import { FiUser, FiShoppingBag, FiHeart, FiBriefcase, FiStar, FiBell, FiLogOut, FiAlertTriangle, FiHome, FiBox } from 'react-icons/fi';
+import { FiUser, FiShoppingBag, FiHeart, FiBriefcase, FiStar, FiBell, FiLogOut, FiAlertTriangle, FiHome, FiBox, FiMessageSquare } from 'react-icons/fi';
 import Navbar from './Navbar';
 import BecomeMerchantTab from './BecomeMerchantTab';
 import MerchantProfileTab from './MerchantProfileTab';
@@ -11,6 +11,7 @@ import SavedItemsTab from './SavedItemsTab';
 import FavoriteShopsTab from './FavoriteShopsTab';
 import NotificationsTab from './NotificationsTab';
 import MerchantProductsTab from './MerchantProductsTab';
+import InboxTab from './InboxTab';
 import '../App.css';
 
 export default function UserProfile() {
@@ -65,6 +66,7 @@ export default function UserProfile() {
       case 'saved': return <SavedItemsTab />;
       case 'favorites': return <FavoriteShopsTab />;
       case 'notifications': return <NotificationsTab />;
+      case 'inbox': return <InboxTab />;
       default: return null;
     }
   };
@@ -84,6 +86,7 @@ export default function UserProfile() {
           <div className={`user-nav-item ${activeTab === 'saved' ? 'active' : ''}`} onClick={() => handleTabClick('saved')}><FiHeart size={18} /> Saved Items</div>
           <div className={`user-nav-item ${activeTab === 'favorites' ? 'active' : ''}`} onClick={() => handleTabClick('favorites')}><FiStar size={18} /> Favorite Shops</div>
           <div className={`user-nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => handleTabClick('notifications')}><FiBell size={18} /> Notifications</div>
+          <div className={`user-nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => handleTabClick('inbox')}><FiMessageSquare size={18} /> Inbox</div>
 
           <div className="sidebar-divider"></div>
           

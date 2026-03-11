@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiMapPin, FiClock, FiImage, FiSearch, FiFilter, FiGrid, FiChevronDown, FiChevronRight } from 'react-icons/fi';
+import { jwtDecode } from 'jwt-decode'; // <-- Added import
+import { FiMapPin, FiClock, FiImage, FiSearch, FiFilter, FiGrid, FiChevronDown, FiChevronRight, FiHeart } from 'react-icons/fi';
 import { FaStore, FaCheckCircle, FaWhatsapp, FaEnvelope } from 'react-icons/fa';
 import Navbar from './Navbar';
 import '../App.css';
 
-// Default fallback banner
 import defaultBanner from '../assets/images/tower.png';
 
-// Exact TAXONOMY copied from Home.jsx
 const TAXONOMY = {
   ITEM: {
     "Electronics & Gadgets": ["Phones & Tablets", "Smart Watches", "Laptops & Computers", "Computer Monitors", "Computer Accessories (Mice, Keyboards, etc)", "Video Games", "Audio & Headphones", "Gaming Consoles and Controllers", "Other..."],
@@ -30,7 +29,6 @@ const TAXONOMY = {
 };
 
 export default function MerchantShop() {
-  // Safely grab parameters to prevent undefined crashes
   const params = useParams();
   const rawMerchantId = params.merchantId || params.id || '';
   const navigate = useNavigate();
@@ -40,7 +38,11 @@ export default function MerchantShop() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- HOME.JSX FILTER STATES ---
+  // --- FAVORITE LOGIC STATES ---
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+
+  // --- FILTER STATES ---
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState({ type: 'ALL', subType: 'ALL', category: 'ALL' });
   const [expandedSidebarSection, setExpandedSidebarSection] = useState(null);
@@ -54,8 +56,6 @@ export default function MerchantShop() {
     const fetchShopData = async () => {
       try {
         setLoading(true);
-        
-        // Safely extract numeric ID (Prevents the .includes crash)
         const actualMerchantId = rawMerchantId.includes('-shopid') 
             ? rawMerchantId.split('-shopid')[1] 
             : rawMerchantId;
@@ -67,10 +67,23 @@ export default function MerchantShop() {
 
         const productsRes = await axios.get(`http://localhost:8081/api/products`);
         const data = Array.isArray(productsRes.data) ? productsRes.data : [];
-        
         const merchantOnly = data.filter(p => p.merchantId.toString() === actualMerchantId && p.status === 'ACTIVE');
+        
         setProducts(merchantOnly);
         setFilteredProducts(merchantOnly);
+
+        // --- CHECK IF ALREADY FAVORITED ---
+        const token = localStorage.getItem('jwtToken');
+        if (token) {
+          const decoded = jwtDecode(token);
+          const currentUserId = decoded.id || decoded.studentId || decoded.userId;
+          const favRes = await axios.get(`http://localhost:8081/api/favorites/${currentUserId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const alreadyFav = favRes.data.some(f => f.merchantId.toString() === actualMerchantId.toString());
+          setIsFavorited(alreadyFav);
+        }
+
       } catch (error) {
         console.error("Error loading shop:", error);
       } finally {
@@ -80,16 +93,46 @@ export default function MerchantShop() {
     fetchShopData();
   }, [rawMerchantId]);
 
-  // --- EXACT HOME.JSX FILTER ENGINE ---
+  // --- HANDLE TOGGLE FAVORITE ---
+  const handleToggleFavorite = async () => {
+    const token = localStorage.getItem('jwtToken');
+    if (!token) {
+      alert("Please log in to add shops to your favorites.");
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setFavLoading(true);
+      const decoded = jwtDecode(token);
+      const currentUserId = decoded.id || decoded.studentId || decoded.userId;
+
+      const res = await axios.post('http://localhost:8081/api/favorites/toggle', {
+        studentId: currentUserId,
+        merchantId: profile.studentId 
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsFavorited(res.data.favorited);
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+      if (error.response && error.response.status === 403) {
+        alert("Your session has expired. Please log in again.");
+        navigate('/login');
+      }
+    } finally {
+      setFavLoading(false);
+    }
+  };
+
+  // --- FILTER ENGINE ---
   useEffect(() => {
     let result = products || [];
 
-    // 1. Taxonomy Filtering
     if (activeFilter.type !== 'ALL') result = result.filter(p => p.listingType === activeFilter.type);
     if (activeFilter.subType !== 'ALL') result = result.filter(p => p.subType === activeFilter.subType);
     if (activeFilter.category !== 'ALL') result = result.filter(p => p.category === activeFilter.category);
 
-    // 2. Search Query Filtering
     if (searchQuery.trim() !== '') {
       const lowerQ = searchQuery.toLowerCase();
       result = result.filter(p => 
@@ -100,32 +143,23 @@ export default function MerchantShop() {
       );
     }
 
-    // 3. Price Filtering
-    if (priceRange.min !== '') {
-      result = result.filter(p => p.price >= parseFloat(priceRange.min));
-    }
-    if (priceRange.max !== '') {
-      result = result.filter(p => p.price <= parseFloat(priceRange.max));
-    }
-
-    // 4. Condition Filtering (Matches Home.jsx exactly)
+    if (priceRange.min !== '') result = result.filter(p => p.price >= parseFloat(priceRange.min));
+    if (priceRange.max !== '') result = result.filter(p => p.price <= parseFloat(priceRange.max));
     if (condition !== 'ALL' && activeFilter.type !== 'SERVICE') {
       result = result.filter(p => p.listingType === 'ITEM' && p.itemCondition === condition);
     }
 
-    // 5. Sorting Engine
     if (sortBy === 'PRICE_LOW_HIGH') {
       result.sort((a, b) => a.price - b.price);
     } else if (sortBy === 'PRICE_HIGH_LOW') {
       result.sort((a, b) => b.price - a.price);
     } else {
-      result.sort((a, b) => b.id - a.id); // NEWEST
+      result.sort((a, b) => b.id - a.id);
     }
 
     setFilteredProducts([...result]); 
   }, [searchQuery, activeFilter, priceRange, condition, sortBy, products]);
 
-  // --- CATEGORY CLICK HANDLER ---
   const handleCategorySelect = (type, subType, category) => {
     setActiveFilter({ type, subType, category });
     if (subType !== 'ALL') setExpandedSidebarSection(subType);
@@ -151,12 +185,10 @@ export default function MerchantShop() {
     <div className="merchant-page-wrapper">
       <Navbar />
       
-      {/* --- BACKGROUND LAYER --- */}
       <div className="parallax-banner-bg" style={{ backgroundImage: `url(${defaultBanner})` }} />
 
       <div className="shop-layout-container">
         
-        {/* --- FOREGROUND LAYER: THE GLASS CARD --- */}
         <div className="shop-header-glass-card">
           <div className="card-internal-banner" style={{ backgroundImage: `url(${bannerUrl})` }}></div>
           <div className="card-glass-content">
@@ -181,6 +213,22 @@ export default function MerchantShop() {
             <div className="shop-join-date">Active Student Merchant • Babcock University</div>
             
             <div className="shop-action-pills">
+               {/* NEW FAVORITE BUTTON */}
+               <button 
+                 onClick={handleToggleFavorite} 
+                 disabled={favLoading}
+                 className="action-pill" 
+                 style={{ 
+                   backgroundColor: isFavorited ? '#fef2f2' : 'white', 
+                   color: isFavorited ? '#ef4444' : '#64748b', 
+                   border: isFavorited ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                   cursor: 'pointer'
+                 }}
+               >
+                 <FiHeart fill={isFavorited ? '#ef4444' : 'none'} size={18} /> 
+                 {isFavorited ? 'Favorited' : 'Favorite Shop'}
+               </button>
+
                {profile.publicPhone && (
                  <a href={`https://wa.me/${waNumber}`} target="_blank" rel="noopener noreferrer" className="action-pill whatsapp-pill">
                    <FaWhatsapp size={18} /> Chat on WhatsApp
@@ -195,10 +243,8 @@ export default function MerchantShop() {
           </div>
         </div>
 
-        {/* --- MAIN SHOP CONTENT --- */}
         <div className="shop-content-grid">
           
-          {/* LEFT: SEAMLESS SIDEBAR INFO + FILTERS */}
           <div className="shop-info-sidebar">
             <div className="info-section seamless-about">
               <h3>About the Business</h3>
@@ -219,13 +265,11 @@ export default function MerchantShop() {
               </div>
             )}
 
-            {/* --- THE INJECTED FILTER ENGINE --- */}
             <div className="info-section" style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '20px' }}>
                 <FiFilter /> Filter Inventory
               </h3>
 
-              {/* SEARCH */}
               <div className="shop-filter-group">
                 <label className="shop-filter-label">Search Shop</label>
                 <div className="shop-search-wrapper">
@@ -234,7 +278,6 @@ export default function MerchantShop() {
                 </div>
               </div>
 
-              {/* CATEGORIES (Using Home.jsx accordion style but constrained) */}
               <div className="shop-filter-group">
                 <label className="shop-filter-label">Categories</label>
                 <div className="shop-taxonomy-container">
@@ -287,7 +330,6 @@ export default function MerchantShop() {
                 </div>
               </div>
 
-              {/* PRICE */}
               <div className="shop-filter-group">
                 <label className="shop-filter-label">Price Range (₦)</label>
                 <div className="shop-filter-row">
@@ -297,7 +339,6 @@ export default function MerchantShop() {
                 </div>
               </div>
 
-              {/* CONDITION */}
               <div className="shop-filter-group">
                 <label className="shop-filter-label">Condition</label>
                 <select className="shop-filter-input" value={condition} onChange={e => setCondition(e.target.value)} disabled={activeFilter.type === 'SERVICE'}>
@@ -315,7 +356,6 @@ export default function MerchantShop() {
             </div>
           </div>
 
-          {/* RIGHT: PRODUCT GRID */}
           <div className="shop-products-area">
              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                <h2 className="shop-section-title" style={{ margin: 0, border: 'none', padding: 0 }}>

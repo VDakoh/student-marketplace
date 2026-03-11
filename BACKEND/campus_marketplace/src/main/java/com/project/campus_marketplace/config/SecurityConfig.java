@@ -30,9 +30,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/saved-items/**").permitAll()
+                        .requestMatchers("/api/favorites/**").permitAll()
                         .requestMatchers("/api/students/**").permitAll()
                         .requestMatchers("/api/products/**").permitAll()
                         .requestMatchers("/api/merchant/profile/shop/**").permitAll()
+                        .requestMatchers("/api/chat/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 );

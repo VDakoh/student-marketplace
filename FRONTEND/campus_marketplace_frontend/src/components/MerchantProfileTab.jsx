@@ -3,13 +3,22 @@ import axios from 'axios';
 import Cropper from 'react-easy-crop'; // The library
 import { getCroppedImg } from '../utils/cropImage'; // The utility file
 import { FiTrash2, FiAlertTriangle } from 'react-icons/fi'; // Icons for remove button and modal
+import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 import '../App.css';
+
+const generateShopSlug = (businessName, merchantId) => {
+    if (!businessName) return `shop-shopid${merchantId}`;
+    const slugified = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    return `${slugified}-shopid${merchantId}`;
+  };
 
 export default function MerchantProfileTab({ email }) {
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const navigate = useNavigate();
   
   // --- Cropper States ---
   const [imageSrc, setImageSrc] = useState(null); // The raw image selected from file explorer
@@ -177,6 +186,16 @@ export default function MerchantProfileTab({ email }) {
       setIsSaving(false);
     }
   };
+
+  const handleViewPublicProfile = () => {
+    const token = localStorage.getItem('jwtToken');
+    if (!token) return;
+    const decoded = jwtDecode(token);
+    const userId = decoded.id || decoded.studentId || decoded.userId;
+    
+    // Use the profileData state so it uses their current (potentially unsaved) business name for the preview!
+    navigate(`/shop/${generateShopSlug(profileData.businessName, userId)}`);
+  };
   
 
   if (loading) return <p>Loading your storefront...</p>;
@@ -188,9 +207,12 @@ export default function MerchantProfileTab({ email }) {
       <div style={{ position: 'sticky', top: 0, backgroundColor: '#f8fafc', zIndex: 10, paddingTop: '40px', paddingBottom: '1px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 style={{ margin: 0 }}>Merchant <span>Dashboard</span></h2>
-          <button className="auth-button" style={{ width: 'auto', padding: '10px 20px', margin: 0 }}>
+          
+          {/* WIRED BUTTON */}
+          <button className="auth-button" style={{ width: 'auto', padding: '10px 20px', margin: 0 }} onClick={handleViewPublicProfile}>
             View Public Profile
           </button>
+
         </div>
 
         {/* --- SUB NAVIGATION TABS --- */}
