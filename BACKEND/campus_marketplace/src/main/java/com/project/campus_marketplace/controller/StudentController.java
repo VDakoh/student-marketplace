@@ -119,4 +119,17 @@ public class StudentController {
         }
         return ResponseEntity.notFound().build();
     }
+
+
+    @DeleteMapping("/{id}/profile-image")
+    public ResponseEntity<?> removeProfileImage(@PathVariable Integer id) {
+        Optional<Student> studentOpt = studentRepository.findById(id);
+        if (studentOpt.isPresent()) {
+            Student student = studentOpt.get();
+            student.setProfileImageUrl(null);
+            studentRepository.save(student);
+            return ResponseEntity.ok(Map.of("message", "Profile image removed successfully"));
+        }
+        return ResponseEntity.notFound().build();
+    }
 }

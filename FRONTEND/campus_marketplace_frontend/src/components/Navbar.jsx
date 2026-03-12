@@ -1,32 +1,52 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import axios from 'axios'; 
 import { FaRegQuestionCircle, FaRegBookmark, FaRegBell, FaRegUserCircle, FaStore } from 'react-icons/fa';
 import { FiLogOut, FiBox, FiAlertTriangle, FiMessageSquare, FiHome } from 'react-icons/fi';
 import logo from '../assets/images/image.png';
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const location = useLocation(); // Hook to get current URL path
+  const location = useLocation(); 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  
+  const [totalUnread, setTotalUnread] = useState(0);
 
   let userRole = null;
   let firstName = 'User';
+  let userId = null; 
 
   const token = localStorage.getItem('jwtToken');
   if (token) {
     try {
       const decoded = jwtDecode(token);
       userRole = decoded.role;
+      userId = decoded.id || decoded.studentId || decoded.userId;
       if (decoded.name) firstName = decoded.name.split(' ')[0];
     } catch (error) {
       console.error("Invalid token");
     }
   }
 
-  // Determine current context for dynamic button rendering
+  // --- UPDATED: Fetch on load AND listen for real-time badge updates ---
+  useEffect(() => {
+    const fetchUnreadCount = () => {
+      if (userId) {
+        axios.get(`http://localhost:8081/api/chat/unread/${userId}`)
+          .then(res => setTotalUnread(res.data.unreadCount))
+          .catch(err => console.log(err));
+      }
+    };
+
+    fetchUnreadCount();
+    window.addEventListener('chatBadgeUpdate', fetchUnreadCount);
+    
+    return () => window.removeEventListener('chatBadgeUpdate', fetchUnreadCount);
+  }, [userId]);
+
   const isHomePage = location.pathname === '/home';
   const isProfilePage = location.pathname === '/profile';
 
@@ -54,14 +74,12 @@ export default function Navbar() {
           <h2>Babcock <span>Marketplace</span></h2>
         </Link>
 
-        {/* --- THE MOTTO (Centered) --- */}
         <div className="nav-motto">
           Uniting the Babcock Community, One Trade at a Time.
         </div>
 
         <div className="nav-actions">
           
-          {/* Dynamic Home Button - Hidden on Home and Profile pages */}
           {!isHomePage && !isProfilePage && (
             <Link to="/home" className="nav-icon-link">
               <FiHome />
@@ -82,9 +100,15 @@ export default function Navbar() {
             <span>Alerts</span>
           </Link>
 
-          {/* Profile Dropdown (Cleaned up UX) */}
           <div className="nav-profile-menu" ref={dropdownRef} onClick={() => setDropdownOpen(!dropdownOpen)}>
-            <FaRegUserCircle style={{ fontSize: '24px' }} />
+            
+            <div style={{ position: 'relative' }}>
+              <FaRegUserCircle style={{ fontSize: '24px' }} />
+              {totalUnread > 0 && (
+                 <span style={{ position: 'absolute', top: '-4px', right: '-4px', backgroundColor: '#ef4444', width: '10px', height: '10px', borderRadius: '50%', border: '2px solid var(--color-primary)' }}></span>
+              )}
+            </div>
+            
             <span>Hi, {firstName}</span>
 
             {dropdownOpen && (
@@ -92,7 +116,16 @@ export default function Navbar() {
                 <Link to="/profile?tab=account" className="dropdown-item"><FaRegUserCircle /> My Profile</Link>
                 <Link to="/profile?tab=orders" className="dropdown-item"><FiBox /> My Orders</Link>
                 <Link to="/profile?tab=saved" className="dropdown-item"><FaRegBookmark /> Saved Items</Link>
-                <Link to="/profile?tab=notifications" className="dropdown-item"><FiMessageSquare /> Messages</Link>
+                
+                <Link to="/profile?tab=inbox" className="dropdown-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><FiMessageSquare /> Messages</div>
+                  {totalUnread > 0 && (
+                    <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '11px', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                      {totalUnread}
+                    </span>
+                  )}
+                </Link>
+
                 <div className="dropdown-item dropdown-logout" onClick={() => setShowLogoutModal(true)}>
                   <FiLogOut /> Logout
                 </div>
@@ -100,7 +133,6 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Dynamic Action Button (Changes to "Back to Homepage" on Profile page) */}
           {isProfilePage ? (
             <Link to="/home" className="nav-btn-sell">
               <FiHome className="sell-icon" />
@@ -124,7 +156,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* --- LOGOUT CONFIRMATION MODAL --- */}
       {showLogoutModal && (
         <div className="modal-overlay" style={{ zIndex: 99999 }}>
           <div className="modal-card" style={{ maxWidth: '400px', textAlign: 'center', padding: '30px', cursor: 'default' }} onClick={(e) => e.stopPropagation()}>

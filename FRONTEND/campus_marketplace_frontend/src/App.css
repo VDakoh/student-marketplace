@@ -4153,3 +4153,190 @@ textarea.profile-input {
 
 
 
+/* =========================================
+   CHAT ATTACHMENTS & RICH BUBBLES
+========================================= */
+
+/* The Paperclip Button */
+.chat-attach-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.chat-attach-btn:hover {
+  background: #f1f5f9;
+  color: var(--color-primary);
+}
+
+/* The Preview Zone (Appears above the input) */
+.chat-preview-zone {
+  padding: 10px 25px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.preview-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  background: white;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+}
+
+.preview-chip.product-chip {
+  border-color: var(--color-accent);
+  color: var(--color-primary-dark);
+}
+
+.preview-close {
+  cursor: pointer;
+  color: #94a3b8;
+  margin-left: 5px;
+}
+.preview-close:hover { color: #ef4444; }
+
+/* The Modal Product List */
+.attachment-product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.attach-product-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.attach-product-item:hover, .attach-product-item.selected {
+  background: #eff6ff;
+  border-color: var(--color-primary);
+}
+
+.attach-product-img {
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #94a3b8;
+}
+
+.attach-product-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* --- RICH CHAT BUBBLE RENDERING --- */
+.chat-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* Spaces out text, images, and products inside the bubble */
+}
+
+/* The Product Card inside a Chat Bubble */
+.chat-product-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+  color: #1e293b; /* Enforce dark text even in blue 'mine' bubbles */
+}
+.chat-product-card:hover { transform: translateY(-2px); }
+
+.chat-product-img {
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #94a3b8;
+}
+
+.chat-product-img img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+.chat-product-title {
+  font-size: 13px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;
+}
+
+.chat-product-price {
+  font-size: 13px; color: #16a34a; font-weight: 800;
+}
+
+/* File Attachments inside Chat Bubbles */
+.chat-img-attachment {
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 200px;
+  max-height: 200px;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.chat-img-attachment img {
+  width: 100%; height: 100%; object-fit: contain; display: block;
+}
+
+.chat-file-attachment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 6px;
+  color: inherit; /* Inherits white or dark text based on bubble */
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 13px;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+.chat-file-attachment:hover { text-decoration: underline; }
+
+.chat-text-content {
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+
+
+/* =========================================
+   CHAT ATTACHMENTS & RICH BUBBLES ENDS
+========================================= */

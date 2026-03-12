@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import axios from 'axios';
 import { FiUser, FiShoppingBag, FiHeart, FiBriefcase, FiStar, FiBell, FiLogOut, FiAlertTriangle, FiHome, FiBox, FiMessageSquare } from 'react-icons/fi';
 import Navbar from './Navbar';
 import BecomeMerchantTab from './BecomeMerchantTab';
 import MerchantProfileTab from './MerchantProfileTab';
-import AccountSettingsTab from './AccountSettingsTab'; // Import the new tab
+import AccountSettingsTab from './AccountSettingsTab'; 
 import MyOrdersTab from './MyOrdersTab';
 import SavedItemsTab from './SavedItemsTab';
 import FavoriteShopsTab from './FavoriteShopsTab';
@@ -18,11 +19,14 @@ export default function UserProfile() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [userRole, setUserRole] = useState('BUYER');
-  const [activeTab, setActiveTab] = useState('account'); // Default to account now
-  const [showLogoutModal, setShowLogoutModal] = useState(false); // Logout Modal State
+  
+  const [userId, setUserId] = useState(null);
+  const [totalUnread, setTotalUnread] = useState(0);
+
+  const [activeTab, setActiveTab] = useState('account'); 
+  const [showLogoutModal, setShowLogoutModal] = useState(false); 
   const location = useLocation();
 
-  // Listen for changes in the URL query parameters (?tab=something)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
@@ -31,7 +35,6 @@ export default function UserProfile() {
     }
   }, [location.search]);
 
-  // Helper function to update the tab AND the URL when clicking the sidebar
   const handleTabClick = (tabName) => {
     setActiveTab(tabName);
     navigate(`/profile?tab=${tabName}`, { replace: true });
@@ -44,6 +47,7 @@ export default function UserProfile() {
         const decoded = jwtDecode(token);
         setEmail(decoded.sub);
         setUserRole(decoded.role);
+        setUserId(decoded.id || decoded.studentId || decoded.userId); 
       } catch (error) {
         navigate('/login');
       }
@@ -51,6 +55,22 @@ export default function UserProfile() {
       navigate('/login');
     }
   }, [navigate]);
+
+  // --- UPDATED: Fetch on load AND listen for real-time badge updates ---
+  useEffect(() => {
+    const fetchUnreadCount = () => {
+      if (userId) {
+        axios.get(`http://localhost:8081/api/chat/unread/${userId}`)
+          .then(res => setTotalUnread(res.data.unreadCount))
+          .catch(err => console.log(err));
+      }
+    };
+
+    fetchUnreadCount();
+    window.addEventListener('chatBadgeUpdate', fetchUnreadCount);
+    
+    return () => window.removeEventListener('chatBadgeUpdate', fetchUnreadCount);
+  }, [userId]);
 
   const handleLogout = () => {
     localStorage.removeItem('jwtToken');
@@ -66,7 +86,7 @@ export default function UserProfile() {
       case 'saved': return <SavedItemsTab />;
       case 'favorites': return <FavoriteShopsTab />;
       case 'notifications': return <NotificationsTab />;
-      case 'inbox': return <InboxTab />;
+      case 'inbox': return <InboxTab />; 
       default: return null;
     }
   };
@@ -77,7 +97,6 @@ export default function UserProfile() {
       
       <div className="user-layout">
         
-        {/* --- SIDE PANEL --- */}
         <div className="user-sidebar" style={{ overflowY: 'auto' }}>
           
           <div className="sidebar-heading">USER PROFILE</div>
@@ -85,8 +104,13 @@ export default function UserProfile() {
           <div className={`user-nav-item ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => handleTabClick('orders')}><FiShoppingBag size={18} /> My Orders</div>
           <div className={`user-nav-item ${activeTab === 'saved' ? 'active' : ''}`} onClick={() => handleTabClick('saved')}><FiHeart size={18} /> Saved Items</div>
           <div className={`user-nav-item ${activeTab === 'favorites' ? 'active' : ''}`} onClick={() => handleTabClick('favorites')}><FiStar size={18} /> Favorite Shops</div>
+          
+          <div className={`user-nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => handleTabClick('inbox')}>
+            <FiMessageSquare size={18} /> Inbox
+            {totalUnread >= 1 && <span style={{ marginLeft: 'auto', background: '#ef4444', color: 'white', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>{totalUnread}</span>}
+          </div>
+
           <div className={`user-nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => handleTabClick('notifications')}><FiBell size={18} /> Notifications</div>
-          <div className={`user-nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => handleTabClick('inbox')}><FiMessageSquare size={18} /> Inbox</div>
 
           <div className="sidebar-divider"></div>
           
@@ -96,7 +120,6 @@ export default function UserProfile() {
             <FiBriefcase size={18} /> {userRole === 'MERCHANT' ? "Merchant Dashboard" : "Become a Merchant"}
           </div>
           
-          {/* ONLY SHOW "MY PRODUCTS" IF THE USER IS OFFICIALLY A MERCHANT */}
           {userRole === 'MERCHANT' && (
             <div className={`user-nav-item ${activeTab === 'products' ? 'active' : ''}`} onClick={() => handleTabClick('products')} style={{ color: activeTab === 'products' ? 'var(--color-primary)' : '#64748b' }}>
               <FiBox size={18} /> My Products
@@ -105,26 +128,22 @@ export default function UserProfile() {
 
           <div className="sidebar-divider"></div>
           
-          {/* BACK TO HOMEPAGE BUTTON */}
           <div className="user-nav-item" onClick={() => navigate('/home')} style={{ color: '#475569' }}>
             <FiHome size={18} /> Back to Homepage
           </div>
 
           <div className="sidebar-divider"></div>
 
-          {/* LOGOUT BUTTON */}
           <div className="user-nav-item logout" onClick={() => setShowLogoutModal(true)} style={{ marginBottom: '20px' }}>
             <FiLogOut size={18} /> Logout
           </div>
         </div>
 
-        {/* --- MAIN CONTENT AREA --- */}
         <div className="user-main">
           {renderTabContent()}
         </div>
       </div>
 
-      {/* --- LOGOUT CONFIRMATION MODAL --- */}
       {showLogoutModal && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-card" style={{ maxWidth: '400px', textAlign: 'center', padding: '30px' }}>

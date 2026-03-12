@@ -17,9 +17,28 @@ public class ChatMessage {
     @Column(name = "receiver_id", nullable = false)
     private Integer receiverId;
 
-    // Optional: If they are chatting specifically about a product, we link it here
+    // The single product attachment
     @Column(name = "product_id")
     private Integer productId;
+
+    @Column(name = "is_offer")
+    private boolean isOffer = false;
+
+    @Column(name = "offer_price")
+    private Double offerPrice;
+
+    @Column(name = "offer_status")
+    private String offerStatus; // e.g., "PENDING", "ACCEPTED", "REJECTED"
+
+    // The 3 allowed file attachments (Images/Docs)
+    @Column(name = "attachment_1")
+    private String attachment1;
+
+    @Column(name = "attachment_2")
+    private String attachment2;
+
+    @Column(name = "attachment_3")
+    private String attachment3;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
@@ -30,9 +49,10 @@ public class ChatMessage {
     @Column(name = "timestamp", updatable = false)
     private LocalDateTime timestamp = LocalDateTime.now();
 
+
     public ChatMessage() {}
 
-    // Getters and Setters
+    // --- Standard Getters and Setters ---
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -53,4 +73,23 @@ public class ChatMessage {
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+
+    // --- New Attachment Getters and Setters ---
+    public String getAttachment1() { return attachment1; }
+    public void setAttachment1(String attachment1) { this.attachment1 = attachment1; }
+
+    public String getAttachment2() { return attachment2; }
+    public void setAttachment2(String attachment2) { this.attachment2 = attachment2; }
+
+    public String getAttachment3() { return attachment3; }
+    public void setAttachment3(String attachment3) { this.attachment3 = attachment3; }
+
+    public boolean isOffer() { return isOffer; }
+    public void setOffer(boolean offer) { isOffer = offer; }
+
+    public Double getOfferPrice() { return offerPrice; }
+    public void setOfferPrice(Double offerPrice) { this.offerPrice = offerPrice; }
+
+    public String getOfferStatus() { return offerStatus; }
+    public void setOfferStatus(String offerStatus) { this.offerStatus = offerStatus; }
 }

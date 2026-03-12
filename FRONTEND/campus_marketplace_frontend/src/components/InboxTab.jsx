@@ -3,47 +3,64 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client/dist/sockjs';
-import { FiSend, FiUser, FiMessageSquare } from 'react-icons/fi';
-import { useLocation } from 'react-router-dom';
+import { FiSend, FiUser, FiMessageSquare, FiPaperclip, FiX, FiPackage, FiImage, FiFile, FiCheck } from 'react-icons/fi';
+import { BsCheckAll } from 'react-icons/bs';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../App.css';
 
 export default function InboxTab() {
-  const location = useLocation(); 
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [currentUserId, setCurrentUserId] = useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [conversations, setConversations] = useState([]); 
-  
-  // We now store the entire conversation object for the active chat
   const [activeChatDetails, setActiveChatDetails] = useState(null); 
   const [messages, setMessages] = useState([]); 
   const [inputText, setInputText] = useState("");
   
+  const [allProducts, setAllProducts] = useState([]); 
+  const [showAttachModal, setShowAttachModal] = useState(false);
+  const [attachTab, setAttachTab] = useState('products'); 
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [isSending, setIsSending] = useState(false);
+
   const messagesEndRef = useRef(null);
-  
-  // Use a ref to strictly track the open chat ID to prevent WebSocket bleeding
   const activeChatIdRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const getImageUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
+
+  const isMessageRead = (msg) => msg.read === true || msg.isRead === true;
 
   useEffect(() => {
     const token = localStorage.getItem('jwtToken');
     if (token) {
       const decoded = jwtDecode(token);
       const userId = decoded.id || decoded.studentId || decoded.userId;
-      setCurrentUserId(userId);
-      fetchInbox(userId, token);
+      setCurrentUserId(Number(userId));
+      fetchInbox(Number(userId), token);
+      fetchAllProducts(); 
     }
   }, []);
 
-  // Sync active chat ref whenever activeChatDetails changes
+  const fetchAllProducts = async () => {
+    try {
+      const res = await axios.get('http://localhost:8081/api/products');
+      setAllProducts(res.data);
+    } catch (error) {
+      console.error("Failed to load products:", error);
+    }
+  };
+
   useEffect(() => {
     activeChatIdRef.current = activeChatDetails?.partnerId || null;
   }, [activeChatDetails]);
 
-  const fetchInbox = async (userId, token) => {
+  const fetchInbox = async (uId, token) => {
     try {
-      const res = await axios.get(`http://localhost:8081/api/chat/inbox/${userId}`, {
+      const res = await axios.get(`http://localhost:8081/api/chat/inbox/${uId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -51,19 +68,31 @@ export default function InboxTab() {
       const convosMap = new Map();
       
       allMessages.forEach(msg => {
-        const partnerId = msg.senderId === userId ? msg.receiverId : msg.senderId;
+        const sId = Number(msg.senderId);
+        const rId = Number(msg.receiverId);
+        const partnerId = sId === uId ? rId : sId;
+        
+        let previewText = msg.content;
+        if (!previewText || previewText.trim() === "") {
+             if (msg.productId) previewText = "📦 Sent a product";
+             else if (msg.attachment1) previewText = "📎 Sent an attachment";
+        }
+
         if (!convosMap.has(partnerId)) {
+          // RACE CONDITION FIX: If this is the chat we are currently looking at, physically force unread to 0!
+          const isCurrentlyActive = activeChatIdRef.current === partnerId;
+          
           convosMap.set(partnerId, {
             partnerId: partnerId,
-            lastMessage: msg.content,
-            timestamp: msg.timestamp
+            lastMessage: previewText,
+            timestamp: msg.timestamp,
+            unreadCount: isCurrentlyActive ? 0 : allMessages.filter(m => Number(m.senderId) === partnerId && Number(m.receiverId) === uId && !isMessageRead(m)).length
           });
         }
       });
       
       const convoArray = Array.from(convosMap.values());
       
-      // Fetch dynamic names & avatars for EVERY person in the inbox
       const detailedConvos = await Promise.all(convoArray.map(async (convo) => {
         let pFullName = `User #${convo.partnerId}`;
         let pShopName = null;
@@ -78,29 +107,25 @@ export default function InboxTab() {
         } catch(e) {}
         
         try {
-          const shopRes = await axios.get(`http://localhost:8081/api/merchant/profile/shop/${convo.partnerId}`);
-          pShopName = shopRes.data.businessName;
-          if (!pAvatar && shopRes.data.logoPath) pAvatar = shopRes.data.logoPath;
+          const shopRes = await axios.get(`http://localhost:8081/api/merchant/profile/shop/${convo.partnerId}`, {
+            validateStatus: status => status < 500 
+          });
+          if (shopRes.status === 200) {
+            pShopName = shopRes.data.businessName;
+            if (!pAvatar && shopRes.data.logoPath) pAvatar = shopRes.data.logoPath;
+          }
         } catch(e) {}
         
-        return {
-          ...convo,
-          partnerFullName: pFullName,
-          partnerShopName: pShopName,
-          partnerAvatar: pAvatar
-        };
+        return { ...convo, partnerFullName: pFullName, partnerShopName: pShopName, partnerAvatar: pAvatar };
       }));
 
-      // Sort by newest messages first
       detailedConvos.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       setConversations(detailedConvos);
 
-      // Keep the active header perfectly synced if a new message comes in!
       if (activeChatIdRef.current) {
         const updatedActive = detailedConvos.find(c => c.partnerId === activeChatIdRef.current);
         if (updatedActive) setActiveChatDetails(updatedActive);
       }
-
     } catch (error) {
       console.error("Failed to load inbox:", error);
     }
@@ -108,62 +133,76 @@ export default function InboxTab() {
 
   useEffect(() => {
     if (!currentUserId) return;
-
     const client = new Client({
       webSocketFactory: () => new SockJS('http://localhost:8081/ws'),
       reconnectDelay: 5000,
       onConnect: () => {
         client.subscribe(`/user/${currentUserId}/queue/messages`, (message) => {
           const newMsg = JSON.parse(message.body);
-          
-          // Only append to screen if the sender is the person we are currently chatting with
-          if (newMsg.senderId === activeChatIdRef.current) {
+          if (Number(newMsg.senderId) === activeChatIdRef.current) {
             setMessages((prev) => [...prev, newMsg]);
+            
+            // Promise chain ensures we wait for the DB to save before updating global UI
+            axios.put(`http://localhost:8081/api/chat/read/${newMsg.senderId}/${currentUserId}`)
+              .then(() => {
+                 window.dispatchEvent(new Event('chatBadgeUpdate'));
+                 fetchInbox(currentUserId, localStorage.getItem('jwtToken'));
+              });
+          } else {
+             // Background message received from someone else
+             fetchInbox(currentUserId, localStorage.getItem('jwtToken'));
+             window.dispatchEvent(new Event('chatBadgeUpdate'));
           }
-          fetchInbox(currentUserId, localStorage.getItem('jwtToken'));
         });
       }
     });
-
     client.activate();
     setStompClient(client);
-
     return () => client.deactivate(); 
     // eslint-disable-next-line
   }, [currentUserId]);
 
   const openChat = async (convoObj) => {
     setActiveChatDetails(convoObj);
+    setSelectedProductId(null);
+    setSelectedFiles([]);
+    
+    // Aggressive Optimistic UI wipe
+    setConversations(prev => prev.map(c => 
+      c.partnerId === convoObj.partnerId ? { ...c, unreadCount: 0 } : c
+    ));
+
     try {
       const res = await axios.get(`http://localhost:8081/api/chat/history/${currentUserId}/${convoObj.partnerId}`);
       setMessages(res.data);
+      
+      await axios.put(`http://localhost:8081/api/chat/read/${convoObj.partnerId}/${currentUserId}`);
+      
+      // Notify Navbars to drop their badges instantly. 
+      // Notice we REMOVED fetchInbox here to kill the race condition!
+      window.dispatchEvent(new Event('chatBadgeUpdate')); 
     } catch (error) {
       console.error("Failed to load chat history:", error);
     }
   };
 
-  // Catch incoming redirects from Product Detail Page
   useEffect(() => {
     if (currentUserId && location.state?.startChatWith) {
-      const { startChatWith, prefillMessage, merchantName, merchantFullName } = location.state;
-      
+      const pId = Number(location.state.startChatWith);
+      const { prefillMessage, merchantName, merchantFullName } = location.state;
       const newConvoObj = {
-        partnerId: startChatWith,
+        partnerId: pId,
         partnerShopName: merchantName,
         partnerFullName: merchantFullName || "User",
-        lastMessage: "Drafting message...",
-        timestamp: new Date().toISOString()
+        lastMessage: prefillMessage || "Drafting message...",
+        timestamp: new Date().toISOString(),
+        unreadCount: 0
       };
-      
       openChat(newConvoObj);
-      
       setConversations(prev => {
-        if (!prev.find(c => c.partnerId === startChatWith)) {
-          return [newConvoObj, ...prev];
-        }
+        if (!prev.find(c => Number(c.partnerId) === pId)) return [newConvoObj, ...prev];
         return prev;
       });
-      
       if (prefillMessage) setInputText(prefillMessage);
       window.history.replaceState({}, document.title);
     }
@@ -174,14 +213,59 @@ export default function InboxTab() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = (e) => {
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (selectedFiles.length + files.length > 3) {
+      alert("You can only attach a maximum of 3 files per message.");
+      return;
+    }
+    setSelectedFiles([...selectedFiles, ...files]);
+    setShowAttachModal(false);
+  };
+
+  const removeFile = (indexToRemove) => {
+    setSelectedFiles(selectedFiles.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const getRelevantProducts = () => {
+    if (!activeChatDetails) return [];
+    return allProducts.filter(p => p.merchantId === currentUserId || p.merchantId === activeChatDetails.partnerId);
+  };
+
+  const sendMessage = async (e) => {
     e.preventDefault();
-    if (!inputText.trim() || !stompClient || !activeChatDetails) return;
+    if ((!inputText.trim() && !selectedProductId && selectedFiles.length === 0) || !stompClient || !activeChatDetails || isSending) return;
+
+    setIsSending(true);
+    let uploadedUrls = [];
+
+    if (selectedFiles.length > 0) {
+      const formData = new FormData();
+      selectedFiles.forEach(f => formData.append("files", f));
+      try {
+        const token = localStorage.getItem('jwtToken');
+        const uploadRes = await axios.post('http://localhost:8081/api/chat/upload', formData, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data' 
+          }
+        });
+        uploadedUrls = uploadRes.data.urls || [];
+      } catch (error) {
+        alert("Failed to upload attachments.");
+        setIsSending(false);
+        return;
+      }
+    }
 
     const chatMessage = {
       senderId: currentUserId,
       receiverId: activeChatDetails.partnerId,
       content: inputText,
+      productId: selectedProductId,
+      attachment1: uploadedUrls[0] || null,
+      attachment2: uploadedUrls[1] || null,
+      attachment3: uploadedUrls[2] || null,
       timestamp: new Date().toISOString()
     };
 
@@ -190,9 +274,45 @@ export default function InboxTab() {
       body: JSON.stringify(chatMessage)
     });
 
-    setMessages((prev) => [...prev, { ...chatMessage, id: Date.now() }]);
+    setMessages((prev) => [...prev, { ...chatMessage, id: Date.now(), read: false }]);
     setInputText("");
-    fetchInbox(currentUserId, localStorage.getItem('jwtToken'));
+    setSelectedProductId(null);
+    setSelectedFiles([]);
+    setIsSending(false);
+    
+    setTimeout(() => fetchInbox(currentUserId, localStorage.getItem('jwtToken')), 500);
+  };
+
+  const renderChatProduct = (prodId) => {
+    const p = allProducts.find(prod => prod.id === prodId);
+    if (!p) return <div className="chat-product-card unavailable">Product no longer available.</div>;
+    
+    const thumbPath = (p.imagePaths && p.imagePaths.length > 0) ? p.imagePaths[0] : p.imagePath;
+    return (
+      <div className="chat-product-card" onClick={() => navigate(`/product/${p.sku || p.id}`)}>
+        <div className="chat-product-img">
+          {thumbPath ? <img src={getImageUrl(thumbPath)} alt="Product" /> : <FiPackage />}
+        </div>
+        <div className="chat-product-info">
+          <div className="chat-product-title">{p.title}</div>
+          <div className="chat-product-price">₦{p.price.toLocaleString()}</div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderFileAttachment = (path) => {
+    if (!path) return null;
+    const isImage = path.match(/\.(jpeg|jpg|gif|png)$/i) != null;
+    return isImage ? (
+      <div className="chat-img-attachment">
+        <img src={getImageUrl(path)} alt="Attachment" />
+      </div>
+    ) : (
+      <a href={getImageUrl(path)} target="_blank" rel="noopener noreferrer" className="chat-file-attachment">
+        <FiFile size={20} /> View Document
+      </a>
+    );
   };
 
   return (
@@ -203,7 +323,6 @@ export default function InboxTab() {
 
       <div className="chat-container">
         
-        {/* --- LEFT SIDEBAR --- */}
         <div className="chat-sidebar">
           {conversations.length === 0 ? (
             <div style={{ padding: '30px 20px', textAlign: 'center', color: '#94a3b8' }}>
@@ -223,7 +342,7 @@ export default function InboxTab() {
                   ) : <FiUser />}
                 </div>
                 
-                <div className="chat-convo-details" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="chat-convo-details" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '4px' }}>
                     <span className="chat-convo-name" style={{ fontSize: '15px' }}>
                       {convo.partnerShopName || convo.partnerFullName}
@@ -234,18 +353,25 @@ export default function InboxTab() {
                       </span>
                     )}
                   </div>
-                  <span className="chat-convo-preview">{convo.lastMessage}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="chat-convo-preview" style={{ fontWeight: convo.unreadCount > 0 ? 'bold' : 'normal', color: convo.unreadCount > 0 ? 'var(--color-primary-dark)' : '#64748b' }}>
+                      {convo.lastMessage}
+                    </span>
+                    {convo.unreadCount > 0 && (
+                      <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '10px', marginLeft: '10px' }}>
+                        {convo.unreadCount}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {/* --- RIGHT AREA --- */}
         <div className="chat-window">
           {activeChatDetails ? (
             <>
-              {/* --- DYNAMIC HEADER --- */}
               <div className="chat-header">
                 <div className="chat-avatar">
                   {activeChatDetails.partnerAvatar ? (
@@ -270,8 +396,28 @@ export default function InboxTab() {
                   const isMine = msg.senderId === currentUserId;
                   return (
                     <div key={msg.id || idx} className={`chat-bubble-wrapper ${isMine ? 'mine' : 'theirs'}`}>
-                      <div className="chat-bubble">
-                        {msg.content}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start', maxWidth: '70%' }}>
+                        
+                        <div className="chat-bubble" style={{ maxWidth: '100%' }}>
+                          {msg.productId && renderChatProduct(msg.productId)}
+                          {renderFileAttachment(msg.attachment1)}
+                          {renderFileAttachment(msg.attachment2)}
+                          {renderFileAttachment(msg.attachment3)}
+                          
+                          {msg.content && msg.content.trim() !== "" && (
+                            <div className="chat-text-content" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
+                              {msg.content}
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                           {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                           {isMine && (
+                             isMessageRead(msg) ? <BsCheckAll color="#3b82f6" size={16} title="Read" /> : <FiCheck color="#94a3b8" size={14} title="Sent" />
+                           )}
+                        </div>
+
                       </div>
                     </div>
                   );
@@ -279,16 +425,37 @@ export default function InboxTab() {
                 <div ref={messagesEndRef} />
               </div>
 
+              {(selectedProductId || selectedFiles.length > 0) && (
+                <div className="chat-preview-zone">
+                  {selectedProductId && (
+                    <div className="preview-chip product-chip">
+                       <FiPackage size={14} /> Attached Product 
+                       <FiX className="preview-close" onClick={() => setSelectedProductId(null)} />
+                    </div>
+                  )}
+                  {selectedFiles.map((file, idx) => (
+                    <div key={idx} className="preview-chip file-chip">
+                       <FiImage size={14} /> {file.name.substring(0, 15)}...
+                       <FiX className="preview-close" onClick={() => removeFile(idx)} />
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <form className="chat-input-area" onSubmit={sendMessage}>
+                <button type="button" className="chat-attach-btn" onClick={() => setShowAttachModal(true)} title="Add attachments">
+                  <FiPaperclip size={20} />
+                </button>
                 <input 
                   type="text" 
                   className="chat-input" 
                   placeholder="Type a message..." 
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
+                  disabled={isSending}
                 />
-                <button type="submit" className="chat-send-btn" disabled={!inputText.trim()}>
-                  <FiSend size={18} />
+                <button type="submit" className="chat-send-btn" disabled={(!inputText.trim() && !selectedProductId && selectedFiles.length === 0) || isSending}>
+                  {isSending ? '...' : <FiSend size={18} />}
                 </button>
               </form>
             </>
@@ -301,6 +468,82 @@ export default function InboxTab() {
           )}
         </div>
       </div>
+
+      {showAttachModal && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-card" style={{ width: '90%', maxWidth: '500px', display: 'flex', flexDirection: 'column' }}>
+            <div className="modal-card-header">
+              <h3>Add Attachment</h3>
+              <button className="modal-close-btn" onClick={() => setShowAttachModal(false)}>&times;</button>
+            </div>
+            
+            <div className="dashboard-sub-tabs" style={{ padding: '0 20px', marginTop: '20px', marginBottom: '10px' }}>
+              <div className={`dashboard-sub-tab ${attachTab === 'products' ? 'active' : ''}`} onClick={() => setAttachTab('products')}>
+                Store Products
+              </div>
+              <div className={`dashboard-sub-tab ${attachTab === 'files' ? 'active' : ''}`} onClick={() => setAttachTab('files')}>
+                Images / Documents
+              </div>
+            </div>
+
+            <div className="modal-card-body" style={{ minHeight: '300px', padding: '0 20px 20px 20px' }}>
+              {attachTab === 'products' && (
+                <div className="attachment-product-list">
+                  {getRelevantProducts().length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#64748b', marginTop: '40px' }}>No products found in this transaction context.</p>
+                  ) : (
+                    getRelevantProducts().map(p => {
+                      const thumb = (p.imagePaths && p.imagePaths.length > 0) ? p.imagePaths[0] : p.imagePath;
+                      return (
+                        <div 
+                          key={p.id} 
+                          className={`attach-product-item ${selectedProductId === p.id ? 'selected' : ''}`}
+                          onClick={() => { setSelectedProductId(p.id); setShowAttachModal(false); }}
+                        >
+                          <div className="attach-product-img">
+                            {thumb ? <img src={getImageUrl(thumb)} alt={p.title} /> : <FiPackage />}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{p.title}</div>
+                            <div style={{ fontSize: '13px', color: 'var(--color-primary)', fontWeight: 'bold' }}>₦{p.price.toLocaleString()}</div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              {attachTab === 'files' && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '250px' }}>
+                  <div 
+                    className="product-image-upload-zone" 
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{ height: '180px', marginBottom: '15px' }}
+                  >
+                    <FiImage size={40} color="#94a3b8" style={{ marginBottom: '10px' }} />
+                    <p style={{ margin: 0, fontWeight: 'bold', color: '#475569' }}>Click to select files</p>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>Max 3 files (Images, PDF, Word)</p>
+                  </div>
+                  <input 
+                    type="file" 
+                    multiple 
+                    ref={fileInputRef} 
+                    style={{ display: 'none' }} 
+                    accept="image/*,.pdf,.doc,.docx"
+                    onChange={handleFileSelect}
+                  />
+                  {selectedFiles.length > 0 && (
+                    <div style={{ fontSize: '13px', color: '#16a34a', fontWeight: 'bold' }}>
+                      {selectedFiles.length} file(s) selected (Click Send in chat)
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -184,6 +184,26 @@ export default function AccountSettingsTab({ email, userRole }) {
     }
   };
 
+  const handleRemovePhoto = async () => {
+    if (!window.confirm("Are you sure you want to remove your profile photo?")) return;
+    try {
+      setIsUploading(true);
+      const token = localStorage.getItem('jwtToken');
+      const decoded = jwtDecode(token);
+      const userId = decoded.id || decoded.studentId || decoded.userId;
+      
+      await axios.delete(`http://localhost:8081/api/students/${userId}/profile-image`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setProfileImage(null);
+    } catch (error) {
+      console.error("Failed to remove photo:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="animation-fade-in" style={{ paddingBottom: '80px' }}>
       
@@ -225,6 +245,14 @@ export default function AccountSettingsTab({ email, userRole }) {
                 <span className="profile-pic-change-text" onClick={() => fileInputRef.current.click()}>
                   Change Photo
                 </span>
+                {profileImage && (
+                  <span 
+                    onClick={handleRemovePhoto} 
+                    style={{ fontSize: '13px', color: '#ef4444', marginTop: '10px', cursor: 'pointer', fontWeight: 'bold' }}
+                  >
+                    Remove Photo
+                  </span>
+                )}
                 <input type="file" accept="image/*" ref={fileInputRef} className="hidden-input" onChange={onSelectFile} />
               </div>
 
