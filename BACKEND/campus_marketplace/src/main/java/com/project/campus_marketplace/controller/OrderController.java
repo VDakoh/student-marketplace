@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,39 +27,34 @@ public class OrderController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    // --- 1. INITIAL HANDSHAKE ACCEPTANCE (Your existing code) ---
     @PostMapping("/respond-offer/{messageId}")
     public ResponseEntity<?> respondToOffer(@PathVariable Integer messageId, @RequestBody Map<String, String> payload) {
-        String response = payload.get("response"); // Expects "ACCEPTED" or "REJECTED"
+        String response = payload.get("response");
         Integer buyerId = Integer.parseInt(payload.get("buyerId"));
 
         Optional<ChatMessage> msgOpt = chatMessageRepository.findById(messageId);
-        if (msgOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        if (msgOpt.isEmpty()) return ResponseEntity.notFound().build();
 
         ChatMessage message = msgOpt.get();
 
-        // Prevent double-processing
         if (!"PENDING".equals(message.getOfferStatus())) {
             return ResponseEntity.badRequest().body("Offer has already been processed.");
         }
 
-        // 1. Update the chat message status
         message.setOfferStatus(response);
         chatMessageRepository.save(message);
 
-        // 2. If accepted, generate the official Order ticket!
         if ("ACCEPTED".equals(response)) {
             Order order = new Order();
             order.setOrderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase());
             order.setBuyerId(buyerId);
-            order.setMerchantId(message.getSenderId()); // The person who sent the offer is the merchant
+            order.setMerchantId(message.getSenderId());
             order.setProductId(message.getProductId());
             order.setAgreedPrice(message.getOfferPrice());
             orderRepository.save(order);
         }
 
-        // 3. Fire a silent system trigger via WebSocket so React auto-refreshes the chat UI
         ChatMessage systemTrigger = new ChatMessage();
         systemTrigger.setSenderId(message.getSenderId());
         systemTrigger.setReceiverId(message.getReceiverId());
@@ -68,5 +64,45 @@ public class OrderController {
         messagingTemplate.convertAndSendToUser(String.valueOf(message.getReceiverId()), "/queue/messages", systemTrigger);
 
         return ResponseEntity.ok(Map.of("message", "Offer " + response.toLowerCase()));
+    }
+
+    // --- 2. FETCH BUYER ORDERS (NEW) ---
+    @GetMapping("/buyer/{buyerId}")
+    public ResponseEntity<List<Order>> getBuyerOrders(@PathVariable Integer buyerId) {
+        return ResponseEntity.ok(orderRepository.findByBuyerIdOrderByUpdatedAtDesc(buyerId));
+    }
+
+    // --- 3. FETCH MERCHANT ORDERS (NEW) ---
+    @GetMapping("/merchant/{merchantId}")
+    public ResponseEntity<List<Order>> getMerchantOrders(@PathVariable Integer merchantId) {
+        return ResponseEntity.ok(orderRepository.findByMerchantIdOrderByUpdatedAtDesc(merchantId));
+    }
+
+    // --- 4. UPDATE ORDER STATE MACHINE (NEW) ---
+    @PutMapping("/{orderId}/status")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Integer orderId, @RequestBody Map<String, String> payload) {
+        String newStatus = payload.get("status");
+        Integer userId = Integer.parseInt(payload.get("userId"));
+
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (orderOpt.isEmpty()) return ResponseEntity.notFound().build();
+
+        Order order = orderOpt.get();
+
+        if (!order.getBuyerId().equals(userId) && !order.getMerchantId().equals(userId)) {
+            return ResponseEntity.status(403).body("Unauthorized to update this order.");
+        }
+
+        order.setStatus(newStatus);
+        Order savedOrder = orderRepository.save(order);
+
+        Integer notifyUserId = order.getBuyerId().equals(userId) ? order.getMerchantId() : order.getBuyerId();
+        ChatMessage sysMsg = new ChatMessage();
+        sysMsg.setSenderId(userId);
+        sysMsg.setReceiverId(notifyUserId);
+        sysMsg.setContent("SYSTEM_ORDER_UPDATE");
+        messagingTemplate.convertAndSendToUser(String.valueOf(notifyUserId), "/queue/messages", sysMsg);
+
+        return ResponseEntity.ok(savedOrder);
     }
 }

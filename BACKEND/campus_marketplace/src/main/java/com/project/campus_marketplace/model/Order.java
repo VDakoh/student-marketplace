@@ -26,15 +26,19 @@ public class Order {
     @Column(name = "agreed_price", nullable = false)
     private Double agreedPrice;
 
+    // The State Machine: PENDING, PROCESSING, READY_FOR_MEETUP, DELIVERED, COMPLETED, CANCELLED
     @Column(nullable = false)
-    private String status = "PENDING"; // PENDING, COMPLETED, CANCELLED
+    private String status = "PENDING";
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
     public Order() {}
 
-    // Getters and Setters
+    // --- Standard Getters and Setters ---
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -58,4 +62,13 @@ public class Order {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    // Auto-update the timestamp whenever the status changes!
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

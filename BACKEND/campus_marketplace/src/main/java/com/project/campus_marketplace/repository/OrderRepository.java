@@ -8,9 +8,10 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
-    // For the buyer's "Active Requests" tab
-    List<Order> findByBuyerIdOrderByCreatedAtDesc(Integer buyerId);
 
-    // For the merchant's fulfillment tab
-    List<Order> findByMerchantIdOrderByCreatedAtDesc(Integer merchantId);
+    // Get all orders where the user is the BUYER
+    List<Order> findByBuyerIdOrderByUpdatedAtDesc(Integer buyerId);
+
+    // Get all orders where the user is the SELLER (Merchant)
+    List<Order> findByMerchantIdOrderByUpdatedAtDesc(Integer merchantId);
 }
