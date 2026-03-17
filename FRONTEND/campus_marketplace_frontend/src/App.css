@@ -4340,3 +4340,106 @@ textarea.profile-input {
 /* =========================================
    CHAT ATTACHMENTS & RICH BUBBLES ENDS
 ========================================= */
+
+
+
+
+/* =========================================
+   NEGOTIATION & OFFER CARDS
+========================================= */
+
+.offer-card {
+  background: white;
+  border: 2px solid var(--color-accent);
+  border-radius: 12px;
+  padding: 18px;
+  width: 320px;
+  max-width: 100%;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  color: #1e293b;
+}
+
+.offer-card.accepted {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.offer-card.rejected {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.offer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 800;
+  font-size: 13px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #cbd5e1;
+}
+
+.offer-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.offer-badge.pending { background: #fef3c7; color: #d97706; }
+.offer-badge.accepted { background: #dcfce3; color: #16a34a; }
+.offer-badge.rejected { background: #fee2e2; color: #ef4444; }
+
+.offer-price-row {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #64748b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.offer-price-row span {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--color-primary-dark);
+}
+
+.offer-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-accept-offer {
+  flex: 2;
+  background: #16a34a;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.btn-accept-offer:hover { transform: scale(1.02); background: #15803d; }
+
+.btn-reject-offer {
+  flex: 1;
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-reject-offer:hover { background: #fef2f2; border-color: #ef4444; }
+
+
+/* =========================================
+   CHAT ATTACHMENTS & RICH BUBBLES ENDS
+========================================= */

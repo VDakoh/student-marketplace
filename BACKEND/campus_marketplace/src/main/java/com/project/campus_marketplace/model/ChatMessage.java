@@ -22,7 +22,7 @@ public class ChatMessage {
     private Integer productId;
 
     @Column(name = "is_offer")
-    private boolean isOffer = false;
+    private Boolean isOffer = false;
 
     @Column(name = "offer_price")
     private Double offerPrice;
@@ -84,8 +84,8 @@ public class ChatMessage {
     public String getAttachment3() { return attachment3; }
     public void setAttachment3(String attachment3) { this.attachment3 = attachment3; }
 
-    public boolean isOffer() { return isOffer; }
-    public void setOffer(boolean offer) { isOffer = offer; }
+    public Boolean getIsOffer() { return isOffer; }
+    public void setIsOffer(Boolean isOffer) { this.isOffer = isOffer; }
 
     public Double getOfferPrice() { return offerPrice; }
     public void setOfferPrice(Double offerPrice) { this.offerPrice = offerPrice; }
