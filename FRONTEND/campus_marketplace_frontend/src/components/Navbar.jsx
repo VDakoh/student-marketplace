@@ -4,7 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 import axios from 'axios'; 
 import { FaRegQuestionCircle, FaRegBookmark, FaRegBell, FaRegUserCircle, FaStore } from 'react-icons/fa';
 import { FiLogOut, FiBox, FiAlertTriangle, FiMessageSquare, FiHome } from 'react-icons/fi';
-import logo from '../assets/images/image.png';
+import logo from '../assets/images/logo.png';
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ export default function Navbar() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
   const [totalUnread, setTotalUnread] = useState(0);
+  const [notifUnread, setNotifUnread] = useState(0);
 
   let userRole = null;
   let firstName = 'User';
@@ -31,7 +32,7 @@ export default function Navbar() {
     }
   }
 
-  // --- UPDATED: Fetch on load AND listen for real-time badge updates ---
+
   useEffect(() => {
     const fetchUnreadCount = () => {
       if (userId) {
@@ -45,6 +46,19 @@ export default function Navbar() {
     window.addEventListener('chatBadgeUpdate', fetchUnreadCount);
     
     return () => window.removeEventListener('chatBadgeUpdate', fetchUnreadCount);
+  }, [userId]);
+
+  useEffect(() => {
+    const fetchNotifs = () => {
+      if (userId) {
+        axios.get(`http://localhost:8081/api/notifications/${userId}/unread-count`)
+          .then(res => setNotifUnread(res.data.count))
+          .catch(err => console.log(err));
+      }
+    };
+    fetchNotifs();
+    window.addEventListener('notificationBadgeUpdate', fetchNotifs);
+    return () => window.removeEventListener('notificationBadgeUpdate', fetchNotifs);
   }, [userId]);
 
   const isHomePage = location.pathname === '/home';
@@ -70,7 +84,7 @@ export default function Navbar() {
     <div className="navbar-wrapper">
       <div className="navbar-top">
         <Link to="/home" className="nav-brand">
-          <img src={logo} alt="Babcock Logo" style={{ height: '45px', objectFit: 'contain' }} />
+          <img src={logo} alt="Babcock Logo" style={{ height: '85px', objectFit: 'contain' }} />
           <h2>Babcock <span>Marketplace</span></h2>
         </Link>
 
@@ -91,12 +105,20 @@ export default function Navbar() {
             <FaRegQuestionCircle />
             <span>Help</span>
           </Link>
+
           <Link to="/profile?tab=saved" className="nav-icon-link">
             <FaRegBookmark />
             <span>Saved</span>
           </Link>
+
           <Link to="/profile?tab=notifications" className="nav-icon-link">
-            <FaRegBell />
+            {/* Wrap the icon in a relative div so the dot anchors directly to the bell */}
+            <div style={{ position: 'relative', display: 'flex' }}>
+              <FaRegBell />
+              {notifUnread > 0 && (
+                 <span style={{ position: 'absolute', top: '-2px', right: '-2px', backgroundColor: '#ef4444', width: '12px', height: '12px', borderRadius: '50%', border: '2px solid var(--color-primary)' }}></span>
+              )}
+            </div>
             <span>Alerts</span>
           </Link>
 

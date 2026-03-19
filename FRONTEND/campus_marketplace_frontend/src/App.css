@@ -206,7 +206,7 @@ body {
 
 
 /* --- MEGA NAVBAR STYLES --- */
-.navbar-wrapper {
+/* .navbar-wrapper {
   background-color: var(--color-primary);
   color: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -215,13 +215,13 @@ body {
   z-index: 100;
 }
 
-/* Top Row: Main Navigation */
+/* Top Row: Main Navigation
 .navbar-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 15px 5%;
-}
+} */
 
 .nav-brand {
   display: flex;
@@ -1574,7 +1574,7 @@ textarea.profile-input {
   padding-top: 20px;
 }
 
-.btn-outline {
+ .btn-outline-2 {
   background: white;
   border: 1px solid #cbd5e1;
   color: #475569;
@@ -1585,7 +1585,7 @@ textarea.profile-input {
   transition: all 0.2s;
 }
 
-.btn-outline:hover {
+.btn-outline-2:hover {
   background: #f8fafc;
   border-color: #94a3b8;
 }
@@ -1927,6 +1927,7 @@ textarea.profile-input {
   align-items: center;
   padding: 15px 5%;
   gap: 20px;
+  width: auto;
 }
 
 .nav-brand {
@@ -3556,7 +3557,6 @@ textarea.profile-input {
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
-  margin-top: 10px;
 }
 
 .btn-outline:hover {
@@ -4564,6 +4564,16 @@ textarea.profile-input {
 
 /* --- TABLET & SMALL DESKTOP (max-width: 1024px) --- */
 @media (max-width: 1024px) {
+  .navbar-wrapper {
+    flex-wrap: wrap;
+    width: max-content;
+  }
+
+  .navbar-top {
+    flex-wrap: wrap;
+    padding: 10px 5%;
+  }
+
   .storefront-container {
     gap: 30px;
   }
@@ -4588,6 +4598,10 @@ textarea.profile-input {
 /* --- TABLET (max-width: 850px) --- */
 @media (max-width: 850px) {
   /* Navbar */
+  .navbar-wrapper {
+    flex-wrap: wrap;
+    width: 100%;
+  }
   .navbar-top {
     flex-wrap: wrap;
     padding: 10px 5%;
@@ -4843,3 +4857,47 @@ textarea.profile-input {
     display: none; /* Simplifies sticky bar on narrow screens */
   }
 }
+
+
+
+
+/* =========================================
+   NOTIFICATIONS FEED
+========================================= */
+
+.notification-card {
+  display: flex;
+  gap: 15px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.notification-card.unread {
+  background: #f8fafc;
+  border-left: 4px solid var(--color-primary);
+}
+
+.notification-icon-wrapper {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+
+/* =========================================
+   NOTIFICATIONS FEED ENDS
+========================================= */

@@ -27,6 +27,9 @@ public class OrderController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    @Autowired
+    private com.project.campus_marketplace.service.NotificationService notificationService;
+
     // --- 1. INITIAL HANDSHAKE ACCEPTANCE (Your existing code) ---
     @PostMapping("/respond-offer/{messageId}")
     public ResponseEntity<?> respondToOffer(@PathVariable Integer messageId, @RequestBody Map<String, String> payload) {
@@ -54,6 +57,14 @@ public class OrderController {
             order.setAgreedPrice(message.getOfferPrice());
             orderRepository.save(order);
         }
+
+        notificationService.sendNotification(
+                message.getSenderId(),
+                "Order Request Accepted!",
+                "Your offer was accepted. Please check your Orders tab to process the transaction.",
+                "ORDER",
+                "/profile?tab=orders"
+        );
 
         ChatMessage systemTrigger = new ChatMessage();
         systemTrigger.setSenderId(message.getSenderId());
@@ -102,6 +113,15 @@ public class OrderController {
         sysMsg.setReceiverId(notifyUserId);
         sysMsg.setContent("SYSTEM_ORDER_UPDATE");
         messagingTemplate.convertAndSendToUser(String.valueOf(notifyUserId), "/queue/messages", sysMsg);
+
+        String alertMsg = "Your order status has been updated to: " + newStatus.replace("_", " ");
+        notificationService.sendNotification(
+                notifyUserId,
+                "Order Status Updated",
+                alertMsg,
+                "ORDER",
+                "/profile?tab=orders"
+        );
 
         return ResponseEntity.ok(savedOrder);
     }

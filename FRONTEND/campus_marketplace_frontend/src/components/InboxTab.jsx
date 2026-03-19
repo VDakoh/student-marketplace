@@ -378,9 +378,15 @@ export default function InboxTab() {
                     <span className="chat-convo-name" style={{ fontSize: '15px' }}>{convo.partnerShopName || convo.partnerFullName}</span>
                     {convo.partnerShopName && <span className="chat-convo-subname" style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>{convo.partnerFullName}</span>}
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="chat-convo-preview" style={{ fontWeight: convo.unreadCount > 0 ? 'bold' : 'normal', color: convo.unreadCount > 0 ? 'var(--color-primary-dark)' : '#64748b' }}>{convo.lastMessage}</span>
-                    {convo.unreadCount > 0 && <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '10px', marginLeft: '10px' }}>{convo.unreadCount}</span>}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '5px' }}>
+                    <span className="chat-convo-preview" style={{ fontWeight: convo.unreadCount > 0 ? 'bold' : 'normal', color: convo.unreadCount > 0 ? 'var(--color-primary-dark)' : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                      {convo.lastMessage}
+                    </span>
+                    {convo.unreadCount > 0 && (
+                      <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '10px', flexShrink: 0 }}>
+                        {convo.unreadCount}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

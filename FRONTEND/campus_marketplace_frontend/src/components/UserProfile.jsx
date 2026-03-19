@@ -22,6 +22,7 @@ export default function UserProfile() {
   
   const [userId, setUserId] = useState(null);
   const [totalUnread, setTotalUnread] = useState(0);
+  const [notifUnread, setNotifUnread] = useState(0);
 
   const [activeTab, setActiveTab] = useState('account'); 
   const [showLogoutModal, setShowLogoutModal] = useState(false); 
@@ -58,24 +59,29 @@ export default function UserProfile() {
 
   // --- UPDATED: Fetch on load AND listen for real-time badge updates ---
   useEffect(() => {
-    const fetchUnreadCount = () => {
+    const fetchUnreadCounts = () => {
       if (userId) {
+        // Fetch Chat Unread
         axios.get(`http://localhost:8081/api/chat/unread/${userId}`)
           .then(res => setTotalUnread(res.data.unreadCount))
+          .catch(err => console.log(err));
+          
+        // Fetch Notifications Unread
+        axios.get(`http://localhost:8081/api/notifications/${userId}/unread-count`)
+          .then(res => setNotifUnread(res.data.count))
           .catch(err => console.log(err));
       }
     };
 
-    fetchUnreadCount();
-    window.addEventListener('chatBadgeUpdate', fetchUnreadCount);
+    fetchUnreadCounts();
+    window.addEventListener('chatBadgeUpdate', fetchUnreadCounts);
+    window.addEventListener('notificationBadgeUpdate', fetchUnreadCounts);
     
-    return () => window.removeEventListener('chatBadgeUpdate', fetchUnreadCount);
+    return () => {
+      window.removeEventListener('chatBadgeUpdate', fetchUnreadCounts);
+      window.removeEventListener('notificationBadgeUpdate', fetchUnreadCounts);
+    };
   }, [userId]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('jwtToken');
-    navigate('/login');
-  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -110,7 +116,10 @@ export default function UserProfile() {
             {totalUnread >= 1 && <span style={{ marginLeft: 'auto', background: '#ef4444', color: 'white', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>{totalUnread}</span>}
           </div>
 
-          <div className={`user-nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => handleTabClick('notifications')}><FiBell size={18} /> Notifications</div>
+          <div className={`user-nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => handleTabClick('notifications')}>
+            <FiBell size={18} /> Notifications
+            {notifUnread > 0 && <span style={{ marginLeft: 'auto', background: '#ef4444', color: 'white', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>{notifUnread}</span>}
+          </div>
 
           <div className="sidebar-divider"></div>
           

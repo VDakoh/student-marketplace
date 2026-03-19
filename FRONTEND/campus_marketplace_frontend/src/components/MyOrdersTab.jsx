@@ -274,7 +274,7 @@ export default function MyOrdersTab() {
                 {activeTab === 'active' && (
                   <div className="order-actions">
                     {/* BUYER ACTIONS */}
-                    {isPurchase && order.status === 'PENDING' && (
+                    {isPurchase && ['PENDING', 'PROCESSING', 'READY_FOR_MEETUP'].includes(order.status) && (
                        <button className="btn-outline" onClick={() => updateOrderStatus(order.id, 'CANCELLED')} style={{ flex: 1 }}>Cancel Request</button>
                     )}
                     {isPurchase && order.status === 'DELIVERED' && (
@@ -289,10 +289,16 @@ export default function MyOrdersTab() {
                        </>
                     )}
                     {!isPurchase && order.status === 'PROCESSING' && (
-                       <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'READY_FOR_MEETUP')} style={{ flex: 1 }}>Mark Ready for Meetup</button>
+                       <>
+                         <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'READY_FOR_MEETUP')} style={{ flex: 2 }}>Mark Ready for Meetup</button>
+                         <button className="btn-outline" onClick={() => updateOrderStatus(order.id, 'CANCELLED')} style={{ flex: 1 }}>Cancel</button>
+                       </>
                     )}
                     {!isPurchase && order.status === 'READY_FOR_MEETUP' && (
-                       <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'DELIVERED')} style={{ flex: 1 }}><FiTruck size={18}/> Mark as Delivered</button>
+                       <>
+                         <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'DELIVERED')} style={{ flex: 2 }}><FiTruck size={18}/> Mark as Delivered</button>
+                         <button className="btn-outline" onClick={() => updateOrderStatus(order.id, 'CANCELLED')} style={{ flex: 1 }}>Cancel</button>
+                       </>
                     )}
                   </div>
                 )}

@@ -1,6 +1,6 @@
 import { FiInstagram, FiTwitter, FiMail, FiMapPin } from 'react-icons/fi';
 import { FaTiktok } from 'react-icons/fa';
-import babcockLogo from '../assets/images/image.png';
+import babcockLogo from '../assets/images/logo.png';
 import '../App.css';
 
 export default function Footer() {
