@@ -36,6 +36,18 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Column(name = "merchant_rating")
+    private Integer merchantRating;
+
+    @Column(name = "product_rating")
+    private Integer productRating;
+
+    @Column(name = "review_text", columnDefinition = "TEXT")
+    private String reviewText;
+
+    @Column(name = "is_rated")
+    private Boolean isRated = false;
+
     public Order() {}
 
     // --- Standard Getters and Setters ---
@@ -65,6 +77,18 @@ public class Order {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Integer getMerchantRating() { return merchantRating; }
+    public void setMerchantRating(Integer merchantRating) { this.merchantRating = merchantRating; }
+
+    public Integer getProductRating() { return productRating; }
+    public void setProductRating(Integer productRating) { this.productRating = productRating; }
+
+    public String getReviewText() { return reviewText; }
+    public void setReviewText(String reviewText) { this.reviewText = reviewText; }
+
+    public Boolean getIsRated() { return isRated; }
+    public void setIsRated(Boolean isRated) { this.isRated = isRated; }
 
     // Auto-update the timestamp whenever the status changes!
     @PreUpdate

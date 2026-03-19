@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode'; // <-- Added import
-import { FiMapPin, FiClock, FiImage, FiSearch, FiFilter, FiGrid, FiChevronDown, FiChevronRight, FiHeart } from 'react-icons/fi';
+import { jwtDecode } from 'jwt-decode';
+import { FiMapPin, FiClock, FiImage, FiSearch, FiFilter, FiGrid, FiChevronDown, FiChevronRight, FiHeart, FiStar, FiInfo, FiX } from 'react-icons/fi';
 import { FaStore, FaCheckCircle, FaWhatsapp, FaEnvelope } from 'react-icons/fa';
 import Navbar from './Navbar';
 import '../App.css';
@@ -36,13 +36,13 @@ export default function MerchantShop() {
   const [profile, setProfile] = useState(null);
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [ratingData, setRatingData] = useState(null); // <-- NEW RATING STATE
+  const [showRatingInfo, setShowRatingInfo] = useState(false); // <-- NEW STATE
   const [loading, setLoading] = useState(true);
 
-  // --- FAVORITE LOGIC STATES ---
   const [isFavorited, setIsFavorited] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
 
-  // --- FILTER STATES ---
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState({ type: 'ALL', subType: 'ALL', category: 'ALL' });
   const [expandedSidebarSection, setExpandedSidebarSection] = useState(null);
@@ -51,6 +51,23 @@ export default function MerchantShop() {
   const [sortBy, setSortBy] = useState('NEWEST');
 
   const getImageUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
+
+  const tooltipRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (tooltipRef.current && !tooltipRef.current.contains(event.target)) {
+        setShowRatingInfo(false);
+      }
+    };
+    if (showRatingInfo) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showRatingInfo]);
+
 
   useEffect(() => {
     const fetchShopData = async () => {
@@ -62,17 +79,26 @@ export default function MerchantShop() {
 
         if (!actualMerchantId) return;
 
+        // 1. Fetch Profile
         const profileRes = await axios.get(`http://localhost:8081/api/merchant/profile/shop/${actualMerchantId}`);
         setProfile(profileRes.data);
 
+        // 2. Fetch Products
         const productsRes = await axios.get(`http://localhost:8081/api/products`);
         const data = Array.isArray(productsRes.data) ? productsRes.data : [];
         const merchantOnly = data.filter(p => p.merchantId.toString() === actualMerchantId && p.status === 'ACTIVE');
-        
         setProducts(merchantOnly);
         setFilteredProducts(merchantOnly);
 
-        // --- CHECK IF ALREADY FAVORITED ---
+        // 3. Fetch Ratings (NEW)
+        try {
+          const ratingRes = await axios.get(`http://localhost:8081/api/orders/merchant/${actualMerchantId}/ratings`);
+          setRatingData(ratingRes.data);
+        } catch (e) {
+          console.error("Could not fetch ratings", e);
+        }
+
+        // 4. Fetch Favorite Status
         const token = localStorage.getItem('jwtToken');
         if (token) {
           const decoded = jwtDecode(token);
@@ -93,7 +119,6 @@ export default function MerchantShop() {
     fetchShopData();
   }, [rawMerchantId]);
 
-  // --- HANDLE TOGGLE FAVORITE ---
   const handleToggleFavorite = async () => {
     const token = localStorage.getItem('jwtToken');
     if (!token) {
@@ -101,25 +126,17 @@ export default function MerchantShop() {
       navigate('/login');
       return;
     }
-
     try {
       setFavLoading(true);
       const decoded = jwtDecode(token);
       const currentUserId = decoded.id || decoded.studentId || decoded.userId;
-
       const res = await axios.post('http://localhost:8081/api/favorites/toggle', {
         studentId: currentUserId,
         merchantId: profile.studentId 
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      }, { headers: { Authorization: `Bearer ${token}` } });
       setIsFavorited(res.data.favorited);
     } catch (error) {
       console.error("Failed to toggle favorite:", error);
-      if (error.response && error.response.status === 403) {
-        alert("Your session has expired. Please log in again.");
-        navigate('/login');
-      }
     } finally {
       setFavLoading(false);
     }
@@ -128,35 +145,22 @@ export default function MerchantShop() {
   // --- FILTER ENGINE ---
   useEffect(() => {
     let result = products || [];
-
     if (activeFilter.type !== 'ALL') result = result.filter(p => p.listingType === activeFilter.type);
     if (activeFilter.subType !== 'ALL') result = result.filter(p => p.subType === activeFilter.subType);
     if (activeFilter.category !== 'ALL') result = result.filter(p => p.category === activeFilter.category);
-
     if (searchQuery.trim() !== '') {
       const lowerQ = searchQuery.toLowerCase();
-      result = result.filter(p => 
-        p.title?.toLowerCase().includes(lowerQ) || 
-        p.description?.toLowerCase().includes(lowerQ) ||
-        p.category?.toLowerCase().includes(lowerQ) ||
-        p.subType?.toLowerCase().includes(lowerQ)
-      );
+      result = result.filter(p => p.title?.toLowerCase().includes(lowerQ) || p.description?.toLowerCase().includes(lowerQ) || p.category?.toLowerCase().includes(lowerQ) || p.subType?.toLowerCase().includes(lowerQ));
     }
-
     if (priceRange.min !== '') result = result.filter(p => p.price >= parseFloat(priceRange.min));
     if (priceRange.max !== '') result = result.filter(p => p.price <= parseFloat(priceRange.max));
     if (condition !== 'ALL' && activeFilter.type !== 'SERVICE') {
       result = result.filter(p => p.listingType === 'ITEM' && p.itemCondition === condition);
     }
-
-    if (sortBy === 'PRICE_LOW_HIGH') {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'PRICE_HIGH_LOW') {
-      result.sort((a, b) => b.price - a.price);
-    } else {
-      result.sort((a, b) => b.id - a.id);
-    }
-
+    if (sortBy === 'PRICE_LOW_HIGH') result.sort((a, b) => a.price - b.price);
+    else if (sortBy === 'PRICE_HIGH_LOW') result.sort((a, b) => b.price - a.price);
+    else result.sort((a, b) => b.id - a.id);
+    
     setFilteredProducts([...result]); 
   }, [searchQuery, activeFilter, priceRange, condition, sortBy, products]);
 
@@ -210,10 +214,54 @@ export default function MerchantShop() {
             </div>
             
             <p className="shop-tagline-text">{profile.tagline || "Providing quality items and services to the Babcock community."}</p>
-            <div className="shop-join-date">Active Student Merchant • Babcock University</div>
+            
+            {/* --- THE ORIGINAL TRI-FOLD RATING BADGE --- */}
+            {ratingData && ratingData.totalReviews > 0 ? (
+               <div className="shop-rating-container">
+                 <div className="shop-rating-main">
+                   
+                   {/* 1. Big Bold Overall Rating */}
+                   <div className="overall-rating-box">
+                     <FiStar fill="#f59e0b" color="#f59e0b" size={32} />
+                     <span className="overall-score">{ratingData.overallRating.toFixed(1)}</span>
+                   </div>
+                   
+                   {/* 2. Stacked Individual Ratings */}
+                   <div className="stacked-ratings">
+                     <div className="sub-rating"><span>Service:</span> {ratingData.merchantAverage.toFixed(1)} ⭐</div>
+                     <div className="sub-rating"><span>Product:</span> {ratingData.productAverage.toFixed(1)} ⭐</div>
+                     <div className="verified-count">{ratingData.totalReviews} Verified Order{ratingData.totalReviews !== 1 ? 's' : ''}</div>
+                   </div>
+                   
+                   {/* 3. Clickable Info Box */}
+                   <div className="rating-info-wrapper" ref={tooltipRef}>
+                     <FiInfo 
+                       size={18} 
+                       className="rating-info-icon" 
+                       onClick={() => setShowRatingInfo(!showRatingInfo)} 
+                     />
+                     {showRatingInfo && (
+                       <div className="rating-info-tooltip animation-fade-in">
+                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                           <strong style={{ margin: 0, fontSize: '13px' }}>Rate Calculation</strong>
+                           <button className="btn-close-filters" onClick={() => setShowRatingInfo(false)}><FiX size={16} /></button>
+                         </div>
+                         <div style={{ lineHeight: '1.4' }}>
+                           To ensure reliability, the score is an 80/20 weighted average:<br/>
+                           <span style={{ color: '#16a34a', fontWeight: 'bold' }}>• 80%</span> Merchant Service<br/>
+                           <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>• 20%</span> Product Quality
+                         </div>
+                       </div>
+                     )}
+                   </div>
+
+                 </div>
+               </div>
+            ) : (
+               <div className="shop-join-date">Active Student Merchant • Babcock University</div>
+            )}
             
             <div className="shop-action-pills">
-               {/* NEW FAVORITE BUTTON */}
                <button 
                  onClick={handleToggleFavorite} 
                  disabled={favLoading}

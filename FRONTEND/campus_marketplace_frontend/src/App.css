@@ -34,6 +34,39 @@
   --color-error-text: #842029;
 }
 
+
+
+
+/* =========================================
+   GLOBAL UTILITIES & ANIMATIONS
+========================================= */
+
+@keyframes fadeInSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animation-fade-in {
+  /* cubic-bezier creates a fast-start, slow-end easing (like Apple interfaces) */
+  animation: fadeInSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  
+  /* Setting will-change tells the browser to use the GPU for these properties */
+  will-change: opacity, transform; 
+}
+
+/* =========================================
+   GLOBAL UTILITIES & ANIMATIONS ENDS
+========================================= */
+
+
+
+
 /* --- BASE STYLES --- */
 body {
   background-color: var(--color-background);
@@ -4547,11 +4580,180 @@ textarea.profile-input {
 }
 
 
-
-
 /* =========================================
    ORDER TRACKING & DASHBOARD ENDS
 ========================================= */
+
+
+
+/* =========================================
+   NOTIFICATIONS FEED
+========================================= */
+
+.notification-card {
+  display: flex;
+  gap: 15px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.notification-card.unread {
+  background: #f8fafc;
+  border-left: 4px solid var(--color-primary);
+}
+
+.notification-icon-wrapper {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+
+/* =========================================
+   NOTIFICATIONS FEED ENDS
+========================================= */
+
+
+
+
+
+
+/* =========================================
+   MERCHANT SHOP RATING BADGE (STACKED)
+========================================= */
+
+.shop-rating-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0 20px 0;
+}
+
+.shop-rating-main {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 15px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  gap: 15px;
+  position: relative; /* Crucial for the tooltip */
+}
+
+.overall-rating-box {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-right: 15px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.overall-score {
+  font-weight: 900;
+  font-size: 32px;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.stacked-ratings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sub-rating {
+  font-size: 12px;
+  color: #1e293b;
+  font-weight: 800;
+}
+
+.sub-rating span {
+  color: #94a3b8;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.verified-count {
+  font-size: 11px;
+  color: #16a34a;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.rating-info-wrapper {
+  display: flex;
+  align-items: flex-start;
+  height: 100%;
+  padding-left: 5px;
+}
+
+.rating-info-icon {
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.rating-info-icon:hover {
+  color: #3b82f6;
+}
+
+.rating-info-tooltip {
+  position: absolute;
+  bottom: 100%; /* FLIPPED: Pushes the tooltip above the icon */
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 15px; /* FLIPPED: Spacing from the bottom */
+  background: white;   
+  border: 1px solid #cbd5e1;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #475569;
+  width: 250px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+  z-index: 99999;      
+  text-align: left;
+}
+
+/* Flipped the tiny triangle pointer to point downwards */
+.rating-info-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: -6px; /* FLIPPED: Anchor to the bottom of the tooltip */
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-right: 1px solid #cbd5e1; /* FLIPPED: Right and Bottom borders */
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.rating-info-tooltip strong {
+  color: #1e293b;
+  display: block;
+  margin-bottom: 5px;
+}
+
+/* =========================================
+   MERCHANT SHOP RATING BADGE
+========================================= */
+
 
 
 
@@ -4860,44 +5062,3 @@ textarea.profile-input {
 
 
 
-
-/* =========================================
-   NOTIFICATIONS FEED
-========================================= */
-
-.notification-card {
-  display: flex;
-  gap: 15px;
-  padding: 20px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.notification-card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-}
-
-.notification-card.unread {
-  background: #f8fafc;
-  border-left: 4px solid var(--color-primary);
-}
-
-.notification-icon-wrapper {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-
-/* =========================================
-   NOTIFICATIONS FEED ENDS
-========================================= */

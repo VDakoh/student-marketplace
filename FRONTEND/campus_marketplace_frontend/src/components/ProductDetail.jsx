@@ -203,7 +203,7 @@ export default function ProductDetail() {
         <div style={{ backgroundColor: '#f4f7f6', minHeight: '100vh' }}>
             <Navbar />
 
-            <div className="product-page-layout">
+            <div className="product-page-layout animation-fade-in">
                 <div className="product-main-content">
                     <button onClick={() => navigate('/home')} className="back-btn">
                         <FiArrowLeft size={18} /> Back to Marketplace

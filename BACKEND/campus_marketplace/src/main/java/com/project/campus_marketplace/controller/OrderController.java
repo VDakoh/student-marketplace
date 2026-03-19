@@ -125,4 +125,91 @@ public class OrderController {
 
         return ResponseEntity.ok(savedOrder);
     }
+
+    // --- 5. SUBMIT TRI-FOLD RATING (NEW) ---
+    @PostMapping("/{orderId}/rate")
+    public ResponseEntity<?> rateOrder(@PathVariable Integer orderId, @RequestBody Map<String, Object> payload) {
+        Integer userId = Integer.parseInt(payload.get("userId").toString());
+        Integer merchantRating = Integer.parseInt(payload.get("merchantRating").toString());
+        Integer productRating = Integer.parseInt(payload.get("productRating").toString());
+        String reviewText = (String) payload.getOrDefault("reviewText", "");
+
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (orderOpt.isEmpty()) return ResponseEntity.notFound().build();
+
+        Order order = orderOpt.get();
+
+        // Security & Logic Checks
+        if (!order.getBuyerId().equals(userId)) {
+            return ResponseEntity.status(403).body("Only the buyer can rate this order.");
+        }
+        if (!"COMPLETED".equals(order.getStatus())) {
+            return ResponseEntity.badRequest().body("Only completed orders can be rated.");
+        }
+        if (order.getIsRated() != null && order.getIsRated()) {
+            return ResponseEntity.badRequest().body("This order has already been rated.");
+        }
+
+        // Apply Ratings
+        order.setMerchantRating(merchantRating);
+        order.setProductRating(productRating);
+        order.setReviewText(reviewText);
+        order.setIsRated(true);
+        orderRepository.save(order);
+
+        // Ping the Merchant with the good news!
+        notificationService.sendNotification(
+                order.getMerchantId(),
+                "New Rating Received! ⭐",
+                "A buyer just left a " + merchantRating + "-star rating for your service. Keep up the great work!",
+                "SYSTEM",
+                "/shop/" + order.getMerchantId() // Link to their public shop to see the new score
+        );
+
+        return ResponseEntity.ok(Map.of("message", "Rating submitted successfully!"));
+    }
+
+    // --- 6. GET MERCHANT RATING STATS (NEW) ---
+    @GetMapping("/merchant/{merchantId}/ratings")
+    public ResponseEntity<Map<String, Object>> getMerchantRatings(@PathVariable Integer merchantId) {
+        // Fetch all orders for this merchant
+        List<Order> allOrders = orderRepository.findByMerchantIdOrderByUpdatedAtDesc(merchantId);
+
+        // Filter down to only the ones that have been rated
+        List<Order> ratedOrders = allOrders.stream()
+                .filter(o -> Boolean.TRUE.equals(o.getIsRated()))
+                .toList();
+
+        if (ratedOrders.isEmpty()) {
+            return ResponseEntity.ok(Map.of(
+                    "totalReviews", 0,
+                    "merchantAverage", 0.0,
+                    "productAverage", 0.0,
+                    "overallRating", 0.0
+            ));
+        }
+
+        double sumMerchant = 0;
+        double sumProduct = 0;
+
+        for (Order o : ratedOrders) {
+            sumMerchant += o.getMerchantRating() != null ? o.getMerchantRating() : 0;
+            sumProduct += o.getProductRating() != null ? o.getProductRating() : 0;
+        }
+
+        int count = ratedOrders.size();
+        double merchantAvg = sumMerchant / count;
+        double productAvg = sumProduct / count;
+
+        // YOUR 80/20 WEIGHTED MATH ALGORITHM
+        double overall = (merchantAvg * 0.8) + (productAvg * 0.2);
+
+        // Round everything to 1 decimal place (e.g., 4.6)
+        return ResponseEntity.ok(Map.of(
+                "totalReviews", count,
+                "merchantAverage", Math.round(merchantAvg * 10.0) / 10.0,
+                "productAverage", Math.round(productAvg * 10.0) / 10.0,
+                "overallRating", Math.round(overall * 10.0) / 10.0
+        ));
+    }
 }

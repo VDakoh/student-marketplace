@@ -93,7 +93,7 @@ export default function SavedItemsTab() {
   }
 
   return (
-    <div>
+    <div className="animation-fade-in">
       <h2 className='user-main-header'>Saved Items</h2>
       <p style={{ color: '#64748b', marginBottom: '25px', fontSize: '14px' }}>Items you've bookmarked for later.</p>
 

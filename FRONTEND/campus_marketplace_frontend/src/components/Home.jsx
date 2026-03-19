@@ -251,7 +251,7 @@ export default function Home() {
         {/* MAIN STOREFRONT GRID */}
         <div className="storefront-main">
           
-          <div className="popular-categories-label">Filter & Explore</div>
+          <div className="popular-categories-label">Filter & Explore <p style={{marginTop: "10px", textTransform: "capitalize"}}>Popular Filters: </p></div>
           
           {/* TOP CONTROLS: Pills + Toggle Button */}
           <div className="filter-controls-header">
@@ -266,11 +266,16 @@ export default function Home() {
                   {tag}
                 </button>
               ))}
+              
             </div>
 
-            <button className={`btn-toggle-filters ${showFilters ? 'active' : ''}`} onClick={() => setShowFilters(!showFilters)}>
-               <FiFilter /> Filters & Sort
-            </button>
+            <div>
+              <p className="popular-categories-label" style={{marginTop: "10px", textTransform: "capitalize"}}>all filters: </p>
+              <button className={`btn-toggle-filters ${showFilters ? 'active' : ''}`} onClick={() => setShowFilters(!showFilters)}>
+              
+                 <FiFilter /> Filters & Sort
+              </button>
+            </div>
           </div>
 
           {/* ADVANCED FILTER PANEL (Dropdown) */}

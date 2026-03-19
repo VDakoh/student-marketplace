@@ -9,13 +9,20 @@ export default function MyOrdersTab() {
   const navigate = useNavigate();
   const [currentUserId, setCurrentUserId] = useState(null);
   const [userRole, setUserRole] = useState('BUYER');
-  
+
   const [viewType, setViewType] = useState('purchases'); // 'purchases' or 'sales'
   const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
-  
+
   const [purchases, setPurchases] = useState([]);
   const [sales, setSales] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  // --- RATING MODAL STATES ---
+  const [ratingOrder, setRatingOrder] = useState(null); // Which order is being rated
+  const [merchantStars, setMerchantStars] = useState(0);
+  const [productStars, setProductStars] = useState(0);
+  const [reviewText, setReviewText] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
 
   const getImageUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
 
@@ -72,12 +79,12 @@ export default function MyOrdersTab() {
         try {
           const shopRes = await axios.get(`http://localhost:8081/api/merchant/profile/shop/${partnerId}`, { validateStatus: s => s < 500 });
           if (shopRes.status === 200) partnerName = shopRes.data.businessName;
-        } catch(e){}
+        } catch (e) { }
       } else {
         try {
           const stuRes = await axios.get(`http://localhost:8081/api/students/${partnerId}`, { headers: { Authorization: `Bearer ${token}` } });
           partnerName = stuRes.data.fullName;
-        } catch(e){}
+        } catch (e) { }
       }
 
       return { ...o, product: prod, partnerName, partnerId };
@@ -88,7 +95,7 @@ export default function MyOrdersTab() {
     if (!window.confirm(`Are you sure you want to change this order status to ${newStatus}?`)) return;
     try {
       const token = localStorage.getItem('jwtToken');
-      await axios.put(`http://localhost:8081/api/orders/${orderId}/status`, 
+      await axios.put(`http://localhost:8081/api/orders/${orderId}/status`,
         { status: newStatus, userId: currentUserId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -96,6 +103,38 @@ export default function MyOrdersTab() {
       fetchOrders(currentUserId, userRole, token);
     } catch (error) {
       alert("Failed to update order status.");
+    }
+  };
+
+  const submitRating = async (e) => {
+    e.preventDefault();
+    if (merchantStars === 0 || productStars === 0) {
+      alert("Please provide a star rating for both the merchant and the product.");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    try {
+      const token = localStorage.getItem('jwtToken');
+      await axios.post(`http://localhost:8081/api/orders/${ratingOrder.id}/rate`, {
+        userId: currentUserId,
+        merchantRating: merchantStars,
+        productRating: productStars,
+        reviewText: reviewText
+      }, { headers: { Authorization: `Bearer ${token}` } });
+
+      alert("Thank you! Your review has been submitted.");
+
+      // Close modal and refresh the list to hide the "Rate" button
+      setRatingOrder(null);
+      setMerchantStars(0);
+      setProductStars(0);
+      setReviewText('');
+      fetchOrders(currentUserId, userRole, token);
+    } catch (error) {
+      alert(error.response?.data || "Failed to submit rating.");
+    } finally {
+      setIsSubmittingReview(false);
     }
   };
 
@@ -131,21 +170,21 @@ export default function MyOrdersTab() {
       <div className="order-progress-container">
         <div className="order-progress-line"></div>
         <div className="order-progress-fill" style={{ width: fillWidth }}></div>
-        
+
         <div className="order-progress-step">
-          <div className={`step-circle ${currentStep >= 1 ? 'active' : ''}`}><FiBox size={12}/></div>
+          <div className={`step-circle ${currentStep >= 1 ? 'active' : ''}`}><FiBox size={12} /></div>
           <span className={`step-label ${currentStep >= 1 ? 'active' : ''}`}>Pending</span>
         </div>
         <div className="order-progress-step">
-          <div className={`step-circle ${currentStep >= 2 ? 'active' : ''}`}><FiPackage size={12}/></div>
+          <div className={`step-circle ${currentStep >= 2 ? 'active' : ''}`}><FiPackage size={12} /></div>
           <span className={`step-label ${currentStep >= 2 ? 'active' : ''}`}>Processing</span>
         </div>
         <div className="order-progress-step">
-          <div className={`step-circle ${currentStep >= 3 ? 'active' : ''}`}><FiTruck size={12}/></div>
+          <div className={`step-circle ${currentStep >= 3 ? 'active' : ''}`}><FiTruck size={12} /></div>
           <span className={`step-label ${currentStep >= 3 ? 'active' : ''}`}>Ready</span>
         </div>
         <div className="order-progress-step">
-          <div className={`step-circle ${currentStep >= 4 ? 'active' : ''}`}><FiCheckCircle size={12}/></div>
+          <div className={`step-circle ${currentStep >= 4 ? 'active' : ''}`}><FiCheckCircle size={12} /></div>
           <span className={`step-label ${currentStep >= 4 ? 'active' : ''}`}>Delivered</span>
         </div>
       </div>
@@ -155,7 +194,7 @@ export default function MyOrdersTab() {
   // --- DYNAMIC UI CONTENT based on Role and Status ---
   const getNextStepsText = (status, isPurchase) => {
     if (isPurchase) {
-      switch(status) {
+      switch (status) {
         case 'PENDING': return "Awaiting merchant approval. The merchant has received your request.";
         case 'PROCESSING': return "The merchant has confirmed your order and is currently preparing it.";
         case 'READY_FOR_MEETUP': return "Your order is ready! Message the merchant to coordinate the meetup.";
@@ -165,7 +204,7 @@ export default function MyOrdersTab() {
         default: return "";
       }
     } else {
-      switch(status) {
+      switch (status) {
         case 'PENDING': return "You received a new order! Accept it to begin processing, or decline if unavailable.";
         case 'PROCESSING': return "You are processing this order. Mark it as 'Ready for Meetup' when it's prepared.";
         case 'READY_FOR_MEETUP': return "Awaiting meetup. Hand over the item to the buyer, then mark as 'Delivered'.";
@@ -184,20 +223,20 @@ export default function MyOrdersTab() {
 
   return (
     <div className="animation-fade-in" style={{ paddingBottom: '80px' }}>
-      
+
       {/* HEADER ZONE */}
       <div style={{ position: 'sticky', top: 0, backgroundColor: '#f8fafc', zIndex: 10, paddingTop: '20px', paddingBottom: '1px' }}>
-        
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-           <h2 style={{ margin: 0 }}>My <span>Orders</span></h2>
-           
-           {/* MERCHANT DUAL-VIEW TOGGLE */}
-           {userRole === 'MERCHANT' && (
-             <div className="order-view-toggle">
-                <button className={viewType === 'purchases' ? 'active' : ''} onClick={() => setViewType('purchases')}>My Purchases</button>
-                <button className={viewType === 'sales' ? 'active' : ''} onClick={() => setViewType('sales')}>My Sales</button>
-             </div>
-           )}
+          <h2 style={{ margin: 0 }}>My <span>Orders</span></h2>
+
+          {/* MERCHANT DUAL-VIEW TOGGLE */}
+          {userRole === 'MERCHANT' && (
+            <div className="order-view-toggle">
+              <button className={viewType === 'purchases' ? 'active' : ''} onClick={() => setViewType('purchases')}>My Purchases</button>
+              <button className={viewType === 'sales' ? 'active' : ''} onClick={() => setViewType('sales')}>My Sales</button>
+            </div>
+          )}
         </div>
 
         <div className="dashboard-sub-tabs">
@@ -212,7 +251,7 @@ export default function MyOrdersTab() {
 
       <div className="animation-fade-in">
         {isLoading ? (
-           <div className="dashboard-section-card" style={{ textAlign: 'center', color: '#64748b' }}>Loading orders...</div>
+          <div className="dashboard-section-card" style={{ textAlign: 'center', color: '#64748b' }}>Loading orders...</div>
         ) : displayedOrders.length === 0 ? (
           <div className="dashboard-section-card" style={{ textAlign: 'center', color: '#64748b' }}>No {activeTab} orders found.</div>
         ) : (
@@ -222,12 +261,12 @@ export default function MyOrdersTab() {
 
             return (
               <div key={order.id} className="order-card" style={{ opacity: order.status === 'CANCELLED' ? 0.7 : 1 }}>
-                
+
                 {/* 1. Header */}
                 <div className="order-header">
                   <div>
                     <div className="order-id">{order.orderNumber}</div>
-                    <div className="order-date">Last updated: {new Date(order.updatedAt).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
+                    <div className="order-date">Last updated: {new Date(order.updatedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                   </div>
                   <div>{renderBadge(order.status)}</div>
                 </div>
@@ -239,7 +278,7 @@ export default function MyOrdersTab() {
                 <div className="order-item-container">
                   <div className="order-item-details">
                     <div className="order-thumbnail">
-                      {prodThumb ? <img src={getImageUrl(prodThumb)} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <FiPackage size={24} color="#94a3b8"/>}
+                      {prodThumb ? <img src={getImageUrl(prodThumb)} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <FiPackage size={24} color="#94a3b8" />}
                     </div>
                     <div>
                       <h4 style={{ margin: '0 0 5px 0', color: '#334155' }}>{order.product?.title || 'Unknown Product'}</h4>
@@ -260,9 +299,9 @@ export default function MyOrdersTab() {
                       {getNextStepsText(order.status, isPurchase)}
                     </p>
                   </div>
-                  
+
                   {/* DIRECT INBOX ROUTING */}
-                  <button className="btn-save" 
+                  <button className="btn-save"
                     style={{ padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '8px' }}
                     onClick={() => navigate('/profile?tab=inbox', { state: { startChatWith: order.partnerId, merchantName: order.partnerName } })}
                   >
@@ -275,40 +314,126 @@ export default function MyOrdersTab() {
                   <div className="order-actions">
                     {/* BUYER ACTIONS */}
                     {isPurchase && ['PENDING', 'PROCESSING', 'READY_FOR_MEETUP'].includes(order.status) && (
-                       <button className="btn-outline" onClick={() => updateOrderStatus(order.id, 'CANCELLED')} style={{ flex: 1 }}>Cancel Request</button>
+                      <button className="btn-outline" onClick={() => updateOrderStatus(order.id, 'CANCELLED')} style={{ flex: 1 }}>Cancel Request</button>
                     )}
                     {isPurchase && order.status === 'DELIVERED' && (
-                       <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'COMPLETED')} style={{ flex: 1 }}><FiCheck size={18}/> Confirm Received</button>
+                      <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'COMPLETED')} style={{ flex: 1 }}><FiCheck size={18} /> Confirm Received</button>
                     )}
 
                     {/* MERCHANT ACTIONS */}
                     {!isPurchase && order.status === 'PENDING' && (
-                       <>
-                         <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'PROCESSING')} style={{ flex: 1 }}>Accept Order</button>
-                         <button className="btn-outline" onClick={() => updateOrderStatus(order.id, 'CANCELLED')} style={{ flex: 1 }}>Decline</button>
-                       </>
+                      <>
+                        <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'PROCESSING')} style={{ flex: 1 }}>Accept Order</button>
+                        <button className="btn-outline" onClick={() => updateOrderStatus(order.id, 'CANCELLED')} style={{ flex: 1 }}>Decline</button>
+                      </>
                     )}
                     {!isPurchase && order.status === 'PROCESSING' && (
-                       <>
-                         <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'READY_FOR_MEETUP')} style={{ flex: 2 }}>Mark Ready for Meetup</button>
-                         <button className="btn-outline" onClick={() => updateOrderStatus(order.id, 'CANCELLED')} style={{ flex: 1 }}>Cancel</button>
-                       </>
+                      <>
+                        <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'READY_FOR_MEETUP')} style={{ flex: 2 }}>Mark Ready for Meetup</button>
+                        <button className="btn-outline" onClick={() => updateOrderStatus(order.id, 'CANCELLED')} style={{ flex: 1 }}>Cancel</button>
+                      </>
                     )}
                     {!isPurchase && order.status === 'READY_FOR_MEETUP' && (
-                       <>
-                         <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'DELIVERED')} style={{ flex: 2 }}><FiTruck size={18}/> Mark as Delivered</button>
-                         <button className="btn-outline" onClick={() => updateOrderStatus(order.id, 'CANCELLED')} style={{ flex: 1 }}>Cancel</button>
-                       </>
+                      <>
+                        <button className="btn-save" onClick={() => updateOrderStatus(order.id, 'DELIVERED')} style={{ flex: 2 }}><FiTruck size={18} /> Mark as Delivered</button>
+                        <button className="btn-outline" onClick={() => updateOrderStatus(order.id, 'CANCELLED')} style={{ flex: 1 }}>Cancel</button>
+                      </>
                     )}
                   </div>
                 )}
-                
+
                 {/* HISTORY ACTIONS */}
                 {activeTab === 'history' && isPurchase && order.status === 'COMPLETED' && (
                   <div className="order-actions">
-                    <button className="btn-outline" style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }} onClick={() => alert("Rating system coming in Phase 2, Step 6.8!")}>
-                      <FiStar size={18} /> Rate Transaction
-                    </button>
+                    {!order.isRated ? (
+                      <button className="btn-outline" style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }} onClick={() => setRatingOrder(order)}>
+                        <FiStar size={18} /> Rate Transaction
+                      </button>
+                    ) : (
+                      <button className="btn-outline" style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px', opacity: 0.5, cursor: 'not-allowed' }} disabled>
+                        <FiCheck size={18} /> Rated
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* --- TRI-FOLD RATING MODAL --- */}
+                {ratingOrder && (
+                  <div className="modal-overlay" style={{ zIndex: 10000 }}>
+                    <div className="modal-card" style={{ width: '90%', maxWidth: '450px', display: 'flex', flexDirection: 'column', padding: '25px' }}>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <h3 style={{ margin: 0, color: '#1e293b' }}>Rate your Experience</h3>
+                        <button className="modal-close-btn" onClick={() => setRatingOrder(null)}>&times;</button>
+                      </div>
+
+                      <p style={{ margin: '0 0 20px 0', color: '#64748b', fontSize: '14px', lineHeight: '1.5' }}>
+                        Your feedback helps keep Babcock Marketplace safe and reliable.
+                      </p>
+
+                      <form onSubmit={submitRating}>
+
+                        {/* Merchant Rating */}
+                        <div style={{ marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                          <label style={{ display: 'block', fontWeight: 'bold', color: '#334155', marginBottom: '8px', fontSize: '14px' }}>
+                            Merchant Service (80% Weight)
+                          </label>
+                          <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Communication, politeness, and punctuality.</div>
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <FiStar
+                                key={`m-${star}`}
+                                size={28}
+                                onClick={() => setMerchantStars(star)}
+                                fill={star <= merchantStars ? "#f59e0b" : "none"}
+                                color={star <= merchantStars ? "#f59e0b" : "#cbd5e1"}
+                                style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Product Rating */}
+                        <div style={{ marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                          <label style={{ display: 'block', fontWeight: 'bold', color: '#334155', marginBottom: '8px', fontSize: '14px' }}>
+                            Product Quality (20% Weight)
+                          </label>
+                          <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Did the item match the description?</div>
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <FiStar
+                                key={`p-${star}`}
+                                size={28}
+                                onClick={() => setProductStars(star)}
+                                fill={star <= productStars ? "#f59e0b" : "none"}
+                                color={star <= productStars ? "#f59e0b" : "#cbd5e1"}
+                                style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Optional Text Review */}
+                        <div style={{ marginBottom: '25px' }}>
+                          <label style={{ display: 'block', fontWeight: 'bold', color: '#334155', marginBottom: '8px', fontSize: '14px' }}>
+                            Written Review (Optional)
+                          </label>
+                          <textarea
+                            className="form-control"
+                            rows="3"
+                            placeholder="Share details of your experience..."
+                            value={reviewText}
+                            onChange={(e) => setReviewText(e.target.value)}
+                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', resize: 'none' }}
+                          ></textarea>
+                        </div>
+
+                        <button type="submit" className="btn-save" style={{ width: '100%', padding: '15px', fontSize: '15px' }} disabled={isSubmittingReview}>
+                          {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                        </button>
+
+                      </form>
+                    </div>
                   </div>
                 )}
 
