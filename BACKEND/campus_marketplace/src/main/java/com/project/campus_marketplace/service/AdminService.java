@@ -5,6 +5,7 @@ import com.project.campus_marketplace.model.MerchantApplication;
 import com.project.campus_marketplace.model.Student;
 import com.project.campus_marketplace.repository.MerchantApplicationRepository;
 import com.project.campus_marketplace.repository.StudentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,6 +13,8 @@ import java.util.List;
 @Service
 public class AdminService {
 
+    @Autowired
+    private com.project.campus_marketplace.service.NotificationService notificationService;
     private final MerchantApplicationRepository appRepository;
     private final StudentRepository studentRepository;
 
@@ -59,6 +62,14 @@ public class AdminService {
         app.setStatus("APPROVED");
         appRepository.save(app);
 
+        notificationService.sendNotification(
+                app.getStudentId(),
+                "Application Approved! 🎉",
+                "Congratulations! Your merchant application has been approved. You can now access your dashboard and list products.",
+                "MERCHANT_APPROVAL",
+                "/profile?tab=merchant"
+        );
+
         return "Success: Application approved. User notified to complete setup.";
     }
 
@@ -70,6 +81,13 @@ public class AdminService {
         app.setRejectionReason(reason); // Save the admin's specific reason
         appRepository.save(app);
 
+        notificationService.sendNotification(
+                app.getStudentId(),
+                "Application Update",
+                "Unfortunately, your merchant application was declined at this time. Reason: " + reason,
+                "ALERT",
+                "/profile?tab=merchant"
+        );
         return "Success: Application rejected.";
     }
 
