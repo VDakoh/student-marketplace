@@ -1,6 +1,7 @@
 package com.project.campus_marketplace.controller;
 
 import com.project.campus_marketplace.model.Admin;
+import com.project.campus_marketplace.model.Student;
 import com.project.campus_marketplace.repository.StudentRepository;
 import com.project.campus_marketplace.service.AuthService;
 import com.project.campus_marketplace.service.OtpService;
@@ -82,6 +83,20 @@ public class AuthController {
         String email = payload.get("email");
         String password = payload.get("password");
 
+        // 1. Fetch the user directly from the repository using the email provided
+        Student user = studentRepository.findByBabcockEmail(email).orElse(null);
+
+        // 2. Check if the user exists AND if their account status is SUSPENDED
+        if (user != null && "SUSPENDED".equals(user.getAccountStatus())) {
+            // Return the strict 403 JSON response for the frontend to catch
+            String errorJson = String.format(
+                    "{\"error\":\"ACCOUNT_SUSPENDED\", \"message\":\"Your account has been suspended.\", \"studentId\":%d}",
+                    user.getId()
+            );
+            return ResponseEntity.status(403).body(errorJson);
+        }
+
+        // 3. If they are not suspended, proceed with normal authentication
         String result = authService.loginStudent(email, password);
 
         if (result.startsWith("Error")) {
@@ -103,4 +118,5 @@ public class AuthController {
         }
         return ResponseEntity.ok(result); // This returns the JWT Token!
     }
+
 }
