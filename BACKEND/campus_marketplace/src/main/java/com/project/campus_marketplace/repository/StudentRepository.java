@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface StudentRepository extends JpaRepository<Student, Integer> {
     // This custom method lets us check if an email is already registered
     Optional<Student> findByBabcockEmail(String email);
+
+    long countByAccountStatus(String accountStatus);
 }

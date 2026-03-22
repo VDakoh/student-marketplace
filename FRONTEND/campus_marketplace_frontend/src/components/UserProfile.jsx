@@ -148,7 +148,7 @@ export default function UserProfile() {
           </div>
         </div>
 
-        <div className="user-main">
+        <div className="user-main animation-fade-in">
           {renderTabContent()}
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function UserProfile() {
             <FiAlertTriangle size={40} color="#ef4444" style={{ marginBottom: '15px' }} />
             <h3 style={{ margin: '0 0 10px 0', color: '#1e293b' }}>Confirm Logout</h3>
             <p style={{ color: '#64748b', marginBottom: '25px' }}>
-              Are you sure you want to log out of Babcock Marketplace?
+              Are you sure you want to log out of BU Student Marketplace?
             </p>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button className="btn-discard" onClick={() => setShowLogoutModal(false)} style={{ flex: 1, border: '1px solid #e2e8f0', borderRadius: '6px' }}>Cancel</button>

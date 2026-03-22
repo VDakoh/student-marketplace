@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AdminService {
@@ -17,6 +18,12 @@ public class AdminService {
     private com.project.campus_marketplace.service.NotificationService notificationService;
     private final MerchantApplicationRepository appRepository;
     private final StudentRepository studentRepository;
+
+    @Autowired
+    private com.project.campus_marketplace.repository.ProductRepository productRepository;
+
+    @Autowired
+    private com.project.campus_marketplace.repository.OrderRepository orderRepository;
 
     public AdminService(MerchantApplicationRepository appRepository, StudentRepository studentRepository) {
         this.appRepository = appRepository;
@@ -102,5 +109,64 @@ public class AdminService {
             dto.setCreatedAt(app.getCreatedAt().toString());
             return dto;
         }).toList();
+    }
+
+    // --- 1. DASHBOARD ANALYTICS ---
+    public Map<String, Object> getSystemStatistics() {
+        long totalUsers = studentRepository.count();
+        long activeUsers = studentRepository.countByAccountStatus("ACTIVE");
+        long suspendedUsers = studentRepository.countByAccountStatus("SUSPENDED");
+        long totalProducts = productRepository.count();
+        long totalOrders = orderRepository.count();
+
+        return Map.of(
+                "totalUsers", totalUsers,
+                "activeUsers", activeUsers,
+                "suspendedUsers", suspendedUsers,
+                "totalProducts", totalProducts,
+                "totalOrders", totalOrders
+        );
+    }
+
+    // --- 2. USER MANAGEMENT ---
+    public List<Student> getAllUsers() {
+        List<Student> allStudents = studentRepository.findAll();
+
+        // Loop through every user and attach their active listing count!
+        for (Student student : allStudents) {
+            long count = productRepository.countByMerchantId(student.getId());
+            student.setListingCount(count);
+
+            // Security Best Practice: Blank out the password hash before sending to the Admin UI
+            student.setPasswordHash(null);
+        }
+
+        return allStudents;
+    }
+
+    public String toggleUserSuspension(Integer userId) {
+        com.project.campus_marketplace.model.Student student = studentRepository.findById(userId).orElse(null);
+        if (student == null) return "Error: User not found.";
+
+        if ("SUSPENDED".equals(student.getAccountStatus())) {
+            student.setAccountStatus("ACTIVE");
+        } else {
+            student.setAccountStatus("SUSPENDED");
+        }
+        studentRepository.save(student);
+        return "Success: User account status updated to " + student.getAccountStatus();
+    }
+
+    // --- 3. PRODUCT MANAGEMENT ---
+    public List<com.project.campus_marketplace.model.Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
+    public String deleteProduct(Integer productId) {
+        if (!productRepository.existsById(productId)) {
+            return "Error: Product not found.";
+        }
+        productRepository.deleteById(productId);
+        return "Success: Product successfully removed from the marketplace.";
     }
 }

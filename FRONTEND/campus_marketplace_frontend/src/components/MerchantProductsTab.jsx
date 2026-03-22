@@ -300,7 +300,7 @@ export default function MerchantProductsTab({ email }) {
   const availableCategories = TAXONOMY[formData.listingType][formData.subType];
 
   return (
-    <div className="dashboard-content-wrapper animation-fade-in" style={{ paddingTop: '40px', paddingBottom: '80px' }}>
+    <div className="dashboard-content-wrapper" style={{ paddingTop: '40px', paddingBottom: '80px' }}>
       
       <div className="inventory-header">
         <div>

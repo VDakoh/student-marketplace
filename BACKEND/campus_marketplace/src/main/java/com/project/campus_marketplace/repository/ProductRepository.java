@@ -17,4 +17,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     // Find active products by category
     List<Product> findByStatusAndCategoryOrderByCreatedAtDesc(String status, String category);
+
+    long countByMerchantId(Integer merchantId);
 }

@@ -43,4 +43,38 @@ public class AdminController {
     public ResponseEntity<List<MerchantApplicationDTO>> getApplicationHistory(@PathVariable Integer studentId) {
         return ResponseEntity.ok(adminService.getStudentApplicationHistory(studentId));
     }
+
+    // --- DASHBOARD ANALYTICS ---
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getAdminStats() {
+        return ResponseEntity.ok(adminService.getSystemStatistics());
+    }
+
+    // --- USER MANAGEMENT ---
+    @GetMapping("/users")
+    public ResponseEntity<List<com.project.campus_marketplace.model.Student>> getAllUsers() {
+        return ResponseEntity.ok(adminService.getAllUsers());
+    }
+
+    // --- PRODUCT MANAGEMENT ---
+    @GetMapping("/products")
+    public ResponseEntity<List<com.project.campus_marketplace.model.Product>> getAllProducts() {
+        return ResponseEntity.ok(adminService.getAllProducts());
+    }
+
+    @DeleteMapping("/products/{id}")
+    public ResponseEntity<String> deleteProduct(@PathVariable Integer id) {
+        String result = adminService.deleteProduct(id);
+        if (result.startsWith("Error")) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @PutMapping("/users/{id}/suspend")
+    public ResponseEntity<String> toggleUserSuspension(@PathVariable Integer id) {
+        String result = adminService.toggleUserSuspension(id);
+        if (result.startsWith("Error")) return ResponseEntity.badRequest().body(result);
+        return ResponseEntity.ok(result);
+    }
 }

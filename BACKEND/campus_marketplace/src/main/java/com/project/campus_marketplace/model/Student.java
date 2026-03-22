@@ -44,6 +44,15 @@ public class Student {
     @Column(name = "additional_directions")
     private String additionalDirections;
 
+    // --- ACCOUNT STATUS ENGINE ---
+    @Column(name = "account_status", nullable = false, columnDefinition = "varchar(255) default 'ACTIVE'")
+    private String accountStatus = "ACTIVE";
+
+    // --- ADMIN DASHBOARD HELPERS ---
+    // @Transient means "send this to React, but DO NOT save it in the database"
+    @Transient
+    private Long listingCount = 0L;
+
 
 
 
@@ -83,4 +92,10 @@ public class Student {
 
     public String getAdditionalDirections() { return additionalDirections; }
     public void setAdditionalDirections(String additionalDirections) { this.additionalDirections = additionalDirections; }
+
+    public String getAccountStatus() { return accountStatus; }
+    public void setAccountStatus(String accountStatus) { this.accountStatus = accountStatus; }
+
+    public Long getListingCount() { return listingCount; }
+    public void setListingCount(Long listingCount) { this.listingCount = listingCount; }
 }
