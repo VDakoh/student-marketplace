@@ -1,7 +1,9 @@
 package com.project.campus_marketplace.controller;
 
 import com.project.campus_marketplace.model.Admin;
+import com.project.campus_marketplace.model.Appeal;
 import com.project.campus_marketplace.model.Student;
+import com.project.campus_marketplace.repository.AppealRepository;
 import com.project.campus_marketplace.repository.StudentRepository;
 import com.project.campus_marketplace.service.AuthService;
 import com.project.campus_marketplace.service.OtpService;
@@ -9,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -16,6 +20,9 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+
+    @Autowired
+    private AppealRepository appealRepository;
 
     @Autowired
     private OtpService otpService;
@@ -117,6 +124,26 @@ public class AuthController {
             return ResponseEntity.badRequest().body(result);
         }
         return ResponseEntity.ok(result); // This returns the JWT Token!
+    }
+
+    // --- 1. USER SUBMITS APPEAL (PUBLIC) ---
+    @PostMapping("/appeals/submit")
+    public ResponseEntity<?> submitAppeal(@RequestBody Map<String, Object> payload) {
+        Integer studentId = Integer.parseInt(payload.get("studentId").toString());
+        String reason = payload.get("reason").toString();
+
+        Appeal appeal = new Appeal();
+        appeal.setStudentId(studentId);
+        appeal.setReason(reason);
+        appealRepository.save(appeal);
+
+        return ResponseEntity.ok(Map.of("message", "Appeal submitted successfully."));
+    }
+
+    // --- 2. USER VIEWS THEIR APPEALS (PUBLIC) ---
+    @GetMapping("/appeals/user/{studentId}")
+    public ResponseEntity<List<Appeal>> getUserAppeals(@PathVariable Integer studentId) {
+        return ResponseEntity.ok(appealRepository.findByStudentIdOrderByCreatedAtDesc(studentId));
     }
 
 }

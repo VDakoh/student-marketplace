@@ -7,6 +7,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminRoute from './components/AdminRoute';
 import ProductDetail from './components/ProductDetail';
 import MerchantShop from './components/MerchantShop';
+import SuspendedAccount from './components/SuspendedAccount';
 
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/suspended" element={<SuspendedAccount />} />
         <Route path="/register" element={<Register />} />
         <Route path="/home" element={<Home />} />
         <Route path="/profile" element={<UserProfile />} />

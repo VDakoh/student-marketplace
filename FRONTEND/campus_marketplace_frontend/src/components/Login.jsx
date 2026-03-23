@@ -48,8 +48,14 @@ export default function Login() {
       }
 
     } catch (error) {
-      setIsError(true);
-      setMessage(error.response?.data || "Invalid credentials or server error.");
+      // NEW: SUSPENSION INTERCEPTOR
+      if (error.response?.status === 403 && error.response?.data?.error === 'ACCOUNT_SUSPENDED') {
+         navigate('/suspended', { state: { studentId: error.response.data.studentId } });
+         return;
+      }
+      
+      // Standard Error Handling
+      setError(error.response?.data || 'Invalid email or password');
     } finally {
       setIsLoading(false);
     }

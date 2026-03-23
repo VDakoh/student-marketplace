@@ -1,7 +1,12 @@
 package com.project.campus_marketplace.controller;
 
 import com.project.campus_marketplace.dto.MerchantApplicationDTO;
+import com.project.campus_marketplace.model.Appeal;
 import com.project.campus_marketplace.model.MerchantApplication;
+import com.project.campus_marketplace.model.Product;
+import com.project.campus_marketplace.model.Student;
+import com.project.campus_marketplace.repository.AppealRepository;
+import com.project.campus_marketplace.repository.StudentRepository;
 import com.project.campus_marketplace.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +20,10 @@ import java.util.Map;
 public class AdminController {
 
     @Autowired
-    private com.project.campus_marketplace.repository.AppealRepository appealRepository;
+    private AppealRepository appealRepository;
 
     @Autowired
-    private com.project.campus_marketplace.repository.StudentRepository studentRepository;
+    private StudentRepository studentRepository;
 
     private final AdminService adminService;
 
@@ -65,7 +70,7 @@ public class AdminController {
 
     // --- PRODUCT MANAGEMENT ---
     @GetMapping("/products")
-    public ResponseEntity<List<com.project.campus_marketplace.model.Product>> getAllProducts() {
+    public ResponseEntity<List<Product>> getAllProducts() {
         return ResponseEntity.ok(adminService.getAllProducts());
     }
 
@@ -85,38 +90,19 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
-    // --- 1. USER SUBMITS APPEAL ---
-    @PostMapping("/appeals/submit")
-    public ResponseEntity<?> submitAppeal(@RequestBody Map<String, Object> payload) {
-        Integer studentId = Integer.parseInt(payload.get("studentId").toString());
-        String reason = payload.get("reason").toString();
 
-        com.project.campus_marketplace.model.Appeal appeal = new com.project.campus_marketplace.model.Appeal();
-        appeal.setStudentId(studentId);
-        appeal.setReason(reason);
-        appealRepository.save(appeal);
-
-        return ResponseEntity.ok(Map.of("message", "Appeal submitted successfully."));
-    }
-
-    // --- 2. USER VIEWS THEIR APPEALS ---
-    @GetMapping("/appeals/user/{studentId}")
-    public ResponseEntity<List<com.project.campus_marketplace.model.Appeal>> getUserAppeals(@PathVariable Integer studentId) {
-        return ResponseEntity.ok(appealRepository.findByStudentIdOrderByCreatedAtDesc(studentId));
-    }
-
-    // --- 3. ADMIN VIEWS ALL APPEALS ---
+    // --- ADMIN VIEWS ALL APPEALS ---
     @GetMapping("/appeals")
-    public ResponseEntity<List<com.project.campus_marketplace.model.Appeal>> getAllAppeals() {
+    public ResponseEntity<List<Appeal>> getAllAppeals() {
         return ResponseEntity.ok(appealRepository.findAllByOrderByCreatedAtDesc());
     }
 
-    // --- 4. ADMIN RESOLVES APPEAL ---
+    // --- ADMIN RESOLVES APPEAL ---
     @PutMapping("/appeals/{appealId}/resolve")
     public ResponseEntity<?> resolveAppeal(@PathVariable Integer appealId, @RequestBody Map<String, String> payload) {
         String resolution = payload.get("status"); // 'APPROVED' or 'REJECTED'
 
-        com.project.campus_marketplace.model.Appeal appeal = appealRepository.findById(appealId).orElse(null);
+        Appeal appeal = appealRepository.findById(appealId).orElse(null);
         if (appeal == null) return ResponseEntity.badRequest().body("Appeal not found.");
 
         appeal.setStatus(resolution);
@@ -124,7 +110,7 @@ public class AdminController {
 
         // If Approved, Reactivate the User!
         if ("APPROVED".equals(resolution)) {
-            com.project.campus_marketplace.model.Student student = studentRepository.findById(appeal.getStudentId()).orElse(null);
+            Student student = studentRepository.findById(appeal.getStudentId()).orElse(null);
             if (student != null) {
                 student.setAccountStatus("ACTIVE");
                 studentRepository.save(student);
