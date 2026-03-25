@@ -1,10 +1,7 @@
 package com.project.campus_marketplace.service;
-
 import com.project.campus_marketplace.dto.MerchantApplicationDTO;
-import com.project.campus_marketplace.model.MerchantApplication;
-import com.project.campus_marketplace.model.Student;
-import com.project.campus_marketplace.repository.MerchantApplicationRepository;
-import com.project.campus_marketplace.repository.StudentRepository;
+import com.project.campus_marketplace.model.*;
+import com.project.campus_marketplace.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,15 +12,17 @@ import java.util.Map;
 public class AdminService {
 
     @Autowired
-    private com.project.campus_marketplace.service.NotificationService notificationService;
+    private NotificationService notificationService;
     private final MerchantApplicationRepository appRepository;
     private final StudentRepository studentRepository;
+    @Autowired
+    private MerchantProfileRepository merchantProfileRepository;
 
     @Autowired
-    private com.project.campus_marketplace.repository.ProductRepository productRepository;
+    private ProductRepository productRepository;
 
     @Autowired
-    private com.project.campus_marketplace.repository.OrderRepository orderRepository;
+    private OrderRepository orderRepository;
 
     public AdminService(MerchantApplicationRepository appRepository, StudentRepository studentRepository) {
         this.appRepository = appRepository;
@@ -144,16 +143,27 @@ public class AdminService {
         return allStudents;
     }
 
-    public String toggleUserSuspension(Integer userId) {
-        com.project.campus_marketplace.model.Student student = studentRepository.findById(userId).orElse(null);
+    public String toggleUserSuspension(Integer userId, String reason) {
+        Student student = studentRepository.findById(userId).orElse(null);
         if (student == null) return "Error: User not found.";
 
-        if ("SUSPENDED".equals(student.getAccountStatus())) {
-            student.setAccountStatus("ACTIVE");
-        } else {
+        boolean isSuspending = !"SUSPENDED".equals(student.getAccountStatus());
+
+        if (isSuspending) {
             student.setAccountStatus("SUSPENDED");
+            student.setSuspensionReason(reason);
+        } else {
+            student.setAccountStatus("ACTIVE");
+            student.setSuspensionReason(null);
         }
         studentRepository.save(student);
+
+        MerchantProfile profile = merchantProfileRepository.findByStudentId(userId).orElse(null);
+        if (profile != null) {
+            profile.setStoreStatus(isSuspending ? "SUSPENDED" : "ACTIVE");
+            merchantProfileRepository.save(profile);
+        }
+
         return "Success: User account status updated to " + student.getAccountStatus();
     }
 

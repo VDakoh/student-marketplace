@@ -95,10 +95,12 @@ public class AuthController {
 
         // 2. Check if the user exists AND if their account status is SUSPENDED
         if (user != null && "SUSPENDED".equals(user.getAccountStatus())) {
-            // Return the strict 403 JSON response for the frontend to catch
+            String reason = user.getSuspensionReason() != null ? user.getSuspensionReason() : "Violation of marketplace terms.";
+            String safeReason = reason.replace("\"", "\\\""); // Escape quotes for JSON
+
             String errorJson = String.format(
-                    "{\"error\":\"ACCOUNT_SUSPENDED\", \"message\":\"Your account has been suspended.\", \"studentId\":%d}",
-                    user.getId()
+                    "{\"error\":\"ACCOUNT_SUSPENDED\", \"message\":\"Your account has been suspended.\", \"studentId\":%d, \"reason\":\"%s\"}",
+                    user.getId(), safeReason
             );
             return ResponseEntity.status(403).body(errorJson);
         }

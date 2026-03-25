@@ -84,12 +84,12 @@ public class AdminController {
     }
 
     @PutMapping("/users/{id}/suspend")
-    public ResponseEntity<String> toggleUserSuspension(@PathVariable Integer id) {
-        String result = adminService.toggleUserSuspension(id);
+    public ResponseEntity<String> toggleUserSuspension(@PathVariable Integer id, @RequestBody(required = false) Map<String, String> payload) {
+        String reason = (payload != null && payload.containsKey("reason")) ? payload.get("reason") : "Violation of marketplace guidelines.";
+        String result = adminService.toggleUserSuspension(id, reason);
         if (result.startsWith("Error")) return ResponseEntity.badRequest().body(result);
         return ResponseEntity.ok(result);
     }
-
 
     // --- ADMIN VIEWS ALL APPEALS ---
     @GetMapping("/appeals")

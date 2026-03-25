@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   FiUsers, FiFileText, FiLogOut, FiGrid, FiSettings, FiActivity, FiSearch, 
-  FiShield, FiTrash2, FiSlash, FiCheckCircle, FiUser, FiImage, FiMapPin, FiPhone, FiMail 
+  FiShield, FiTrash2, FiSlash, FiCheckCircle, FiUser, FiImage, FiMapPin, FiPhone, FiMail, FiMessageSquare, FiClock, FiXCircle, FiEye
 } from 'react-icons/fi';
 import { FaStore } from 'react-icons/fa';
 import '../App.css';
@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [applications, setApplications] = useState([]);
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [appeals, setAppeals] = useState([]);
 
   // --- FILTER STATES (For Users) ---
   const [userSearch, setUserSearch] = useState('');
@@ -38,9 +39,15 @@ export default function AdminDashboard() {
   // --- INTERACTIVE ROW MODAL STATES ---
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedAppeal, setSelectedAppeal] = useState(null); // NEW: Appeal Modal State
   const [viewingMerchantView, setViewingMerchantView] = useState(false);
   const [userMerchantProfile, setUserMerchantProfile] = useState(null);
   const [fetchingProfile, setFetchingProfile] = useState(false);
+
+  // --- SUSPENSION MODAL STATES ---
+  const [suspendingUser, setSuspendingUser] = useState(null);
+  const [suspendReasonType, setSuspendReasonType] = useState('');
+  const [suspendReasonText, setSuspendReasonText] = useState('');
 
   const getFileUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
 
@@ -53,6 +60,10 @@ export default function AdminDashboard() {
     if (mainTab === 'APPLICATIONS') fetchApplications();
     if (mainTab === 'USERS') fetchUsers();
     if (mainTab === 'LISTINGS') fetchProducts();
+    if (mainTab === 'APPEALS') {
+      fetchAppeals();
+      if (users.length === 0) fetchUsers(); 
+    }
     // eslint-disable-next-line
   }, [mainTab, appTab]);
 
@@ -88,6 +99,14 @@ export default function AdminDashboard() {
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
+  const fetchAppeals = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get('http://localhost:8081/api/admin/appeals', { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
+      setAppeals(res.data);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
+  };
+
   // --- ADMIN ACTIONS ---
   const handleApprove = async (id) => {
     try {
@@ -109,16 +128,44 @@ export default function AdminDashboard() {
     } catch (error) { setMessage(error.response?.data || "Failed to reject."); }
   };
 
-  const toggleUserSuspension = async (userId) => {
-    if (!window.confirm("Are you sure you want to change this user's account status?")) return;
+  const submitSuspension = async () => {
+    if (!suspendReasonType) return alert("Please select a primary reason.");
+    
+    let finalReason = suspendReasonType;
+    if (suspendReasonText.trim()) finalReason += ` - ${suspendReasonText.trim()}`;
+
+    try {
+      const res = await axios.put(`http://localhost:8081/api/admin/users/${suspendingUser.id}/suspend`, 
+        { reason: finalReason }, 
+        { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } }
+      );
+      setMessage(res.data);
+      setSuspendingUser(null);
+      setSuspendReasonType('');
+      setSuspendReasonText('');
+      fetchUsers();
+      if (selectedUser?.id === suspendingUser.id) setSelectedUser({...selectedUser, accountStatus: 'SUSPENDED'});
+    } catch (error) { setMessage("Failed to update user status."); }
+  };
+
+  const reactivateUser = async (userId) => {
+    if (!window.confirm("Are you sure you want to reactivate this account?")) return;
     try {
       const res = await axios.put(`http://localhost:8081/api/admin/users/${userId}/suspend`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
       setMessage(res.data);
       fetchUsers();
-      if (selectedUser?.id === userId) {
-        setSelectedUser({...selectedUser, accountStatus: selectedUser.accountStatus === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'});
-      }
-    } catch (error) { setMessage("Failed to update user status."); }
+      if (selectedUser?.id === userId) setSelectedUser({...selectedUser, accountStatus: 'ACTIVE'});
+    } catch (error) { setMessage("Failed to reactivate user."); }
+  };
+
+  const resolveAppeal = async (appealId, status) => {
+    if (!window.confirm(`Are you sure you want to mark this appeal as ${status}?`)) return;
+    try {
+      const res = await axios.put(`http://localhost:8081/api/admin/appeals/${appealId}/resolve`, { status }, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
+      setMessage(res.data.message || `Appeal successfully ${status.toLowerCase()}.`);
+      fetchAppeals();
+      if (status === 'APPROVED') fetchUsers(); 
+    } catch (error) { setMessage("Failed to resolve appeal."); }
   };
 
   const deleteProduct = async (productId) => {
@@ -170,6 +217,14 @@ export default function AdminDashboard() {
     return matchesSearch && matchesStatus && matchesListing;
   });
 
+  const getStudentInfo = (id) => {
+    const user = users.find(u => u.id === id);
+    return user ? `${user.fullName} (${user.babcockEmail})` : `Unknown User (ID: ${id})`;
+  };
+
+  // Helper to get full user object for the appeal modal
+  const appealUserObj = selectedAppeal ? users.find(u => u.id === selectedAppeal.studentId) : null;
+
   return (
     <div className="admin-layout animation-fade-in">
       
@@ -198,6 +253,10 @@ export default function AdminDashboard() {
 
           <div className={`admin-nav-item ${mainTab === 'USERS' ? 'active' : ''}`} onClick={() => setMainTab('USERS')}>
             <FiUsers size={18} /> User Management
+          </div>
+
+          <div className={`admin-nav-item ${mainTab === 'APPEALS' ? 'active' : ''}`} onClick={() => setMainTab('APPEALS')}>
+            <FiMessageSquare size={18} /> Appeals Management
           </div>
           
           <div className={`admin-nav-item ${mainTab === 'LISTINGS' ? 'active' : ''}`} onClick={() => setMainTab('LISTINGS')}>
@@ -403,11 +462,11 @@ export default function AdminDashboard() {
                         </td>
                         <td>
                           {user.accountStatus === 'ACTIVE' ? (
-                            <button className="btn-reject btn-sm action-btn" onClick={(e) => { e.stopPropagation(); toggleUserSuspension(user.id); }}>
+                            <button className="btn-reject btn-sm action-btn" onClick={(e) => { e.stopPropagation(); setSuspendingUser(user); }}>
                               <FiSlash size={14}/> Suspend Access
                             </button>
                           ) : (
-                            <button className="btn-approve btn-sm action-btn" onClick={(e) => { e.stopPropagation(); toggleUserSuspension(user.id); }}>
+                            <button className="btn-approve btn-sm action-btn" onClick={(e) => { e.stopPropagation(); reactivateUser(user.id); }}>
                               <FiShield size={14}/> Reactivate
                             </button>
                           )}
@@ -422,7 +481,79 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* --- TAB 4: GLOBAL LISTINGS --- */}
+        {/* --- TAB 4: APPEALS MANAGEMENT --- */}
+        {mainTab === 'APPEALS' && (
+          <div className="animation-fade-in">
+             <div className="admin-header-revamp">
+              <h2>Appeals <span>Management</span></h2>
+              <p>Review and resolve account suspension appeals submitted by students.</p>
+            </div>
+            
+            {loading ? <p className="loading-text">Loading appeals...</p> : appeals.length === 0 ? (
+              <div className="empty-state admin-empty">No appeals in the system.</div>
+            ) : (
+              <div className="admin-table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Date Submitted</th>
+                      <th>Student Info</th>
+                      <th>Appeal Defense</th>
+                      <th>Status</th>
+                      <th>Resolution</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {appeals.map((appeal) => (
+                      <tr key={appeal.id} className="clickable-row" onClick={() => setSelectedAppeal(appeal)}>
+                        <td style={{ whiteSpace: 'nowrap', fontSize: '13px', color: '#64748b' }}>
+                          {new Date(appeal.createdAt).toLocaleDateString()}
+                        </td>
+                        <td>
+                          <strong style={{ color: '#1e293b' }}>{getStudentInfo(appeal.studentId)}</strong>
+                        </td>
+
+                        {/* We use JS to physically cut the string, bypassing the CSS browser bug entirely */}
+                        <td style={{ width: '280px', maxWidth: '280px' }}>
+                          <div className="appeal-text-truncate">
+                            {appeal.reason.length > 29 ? `${appeal.reason.substring(0, 29)}...` : appeal.reason}
+                          </div>
+                          <div className="click-indicator">
+                            <FiEye size={12} style={{marginRight: '4px'}}/> Click row to view full defense
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`badge ${appeal.status.toLowerCase()}`}>
+                            {appeal.status === 'PENDING' && <FiClock style={{marginRight: '4px'}} />}
+                            {appeal.status === 'APPROVED' && <FiCheckCircle style={{marginRight: '4px'}} />}
+                            {appeal.status === 'REJECTED' && <FiXCircle style={{marginRight: '4px'}} />}
+                            {appeal.status}
+                          </span>
+                        </td>
+                        <td>
+                          {appeal.status === 'PENDING' ? (
+                            <div className="action-buttons" style={{ flexDirection: 'column', gap: '8px' }}>
+                              <button onClick={(e) => { e.stopPropagation(); resolveAppeal(appeal.id, 'APPROVED'); }} className="btn-approve btn-sm" style={{ width: '100%' }}>
+                                Approve
+                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); resolveAppeal(appeal.id, 'REJECTED'); }} className="btn-reject btn-sm" style={{ width: '100%' }}>
+                                Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>RESOLVED</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* --- TAB 5: GLOBAL LISTINGS --- */}
         {mainTab === 'LISTINGS' && (
           <div className="animation-fade-in">
              <div className="admin-header-revamp">
@@ -535,9 +666,9 @@ export default function AdminDashboard() {
 
             <div className="modal-card-actions">
               {selectedUser.accountStatus === 'ACTIVE' ? (
-                <button className="btn-reject full-width-btn" onClick={() => toggleUserSuspension(selectedUser.id)}>Suspend Account Access</button>
+                <button className="btn-reject full-width-btn" onClick={() => { setSelectedUser(null); setSuspendingUser(selectedUser); }}>Suspend Account Access</button>
               ) : (
-                <button className="btn-approve full-width-btn" onClick={() => toggleUserSuspension(selectedUser.id)}>Reactivate Account</button>
+                <button className="btn-approve full-width-btn" onClick={() => reactivateUser(selectedUser.id)}>Reactivate Account</button>
               )}
             </div>
           </div>
@@ -576,7 +707,6 @@ export default function AdminDashboard() {
                     {selectedProduct.listingType === 'ITEM' && (
                       <>
                         <div><strong>Condition:</strong> {selectedProduct.itemCondition}</div>
-                        {/* ROBUST STOCK FALLBACK (Fix for Issue 4) */}
                         <div><strong>Stock:</strong> {selectedProduct.stockQuantity ?? selectedProduct.quantityAvailable ?? selectedProduct.quantity ?? selectedProduct.stock ?? 'N/A'} unit(s)</div>
                       </>
                     )}
@@ -594,6 +724,81 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* --- SELECTED APPEAL MODAL --- */}
+      {selectedAppeal && (
+        <div className="modal-overlay" onClick={() => setSelectedAppeal(null)} style={{zIndex: 9999}}>
+          <div className="modal-card" onClick={e => e.stopPropagation()}>
+            <div className="modal-card-header clean-header">
+              <div className="header-flex">
+                <h3 style={{ margin: 0 }}>Appeal Details</h3>
+                <span className={`badge ${selectedAppeal.status.toLowerCase()}`}>{selectedAppeal.status}</span>
+              </div>
+              <button className="modal-close-btn" onClick={() => setSelectedAppeal(null)}>&times;</button>
+            </div>
+            
+            <div className="modal-card-body">
+              <p><strong>Student Name:</strong> {appealUserObj?.fullName || 'Unknown User'}</p>
+              <p><strong>Email:</strong> {appealUserObj?.babcockEmail || 'Unknown Email'}</p>
+              <p><strong>Submitted On:</strong> {new Date(selectedAppeal.createdAt).toLocaleDateString()}</p>
+              
+              <div className="suspension-reason-box" style={{ marginTop: '20px', marginBottom: '20px', padding: '12px', background: '#fef2f2', borderLeft: '4px solid #ef4444', borderRadius: '0 8px 8px 0' }}>
+                <div className="reason-title" style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '13px', marginBottom: '5px' }}>
+                  <FiFileText style={{marginRight: '6px'}}/> Original Suspension Reason
+                </div>
+                <div className="reason-text" style={{ fontSize: '14px', color: '#1e293b' }}>
+                  {appealUserObj?.suspensionReason || "Violation of marketplace guidelines."}
+                </div>
+              </div>
+              
+              <p className="mt-15"><strong>Student's Defense:</strong></p>
+              <div className="app-bio-box" style={{ whiteSpace: 'pre-wrap', maxHeight: '200px', overflowY: 'auto' }}>
+                {selectedAppeal.reason}
+              </div>
+            </div>
+
+            {selectedAppeal.status === 'PENDING' && (
+              <div className="modal-card-actions">
+                <button onClick={() => { resolveAppeal(selectedAppeal.id, 'APPROVED'); setSelectedAppeal(null); }} className="btn-approve flex-1">Approve & Reactivate</button>
+                <button onClick={() => { resolveAppeal(selectedAppeal.id, 'REJECTED'); setSelectedAppeal(null); }} className="btn-reject flex-1">Reject Appeal</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* --- SUSPEND USER REASON MODAL --- */}
+      {suspendingUser && (
+        <div className="modal-overlay" onClick={() => setSuspendingUser(null)} style={{zIndex: 9999}}>
+          <div className="modal-card" onClick={e => e.stopPropagation()}>
+            <div className="modal-card-header danger-header" style={{backgroundColor: '#ef4444'}}>
+              <h3 style={{ margin: 0, color: 'white' }}>Suspending: {suspendingUser.fullName}</h3>
+              <button className="modal-close-btn text-white" onClick={() => setSuspendingUser(null)}>&times;</button>
+            </div>
+            <div className="modal-card-body">
+              <p>Select the reason for this account suspension. This will be shown to the user.</p>
+              
+              <select className="admin-filter-input" style={{ width: '100%', marginBottom: '15px' }} value={suspendReasonType} onChange={e => setSuspendReasonType(e.target.value)}>
+                <option value="" disabled>Select Primary Offense...</option>
+                <option value="Fraudulent Activity / Scamming">Fraudulent Activity / Scamming</option>
+                <option value="Posting Prohibited Items">Posting Prohibited Items</option>
+                <option value="Harassment or Abusive Behavior">Harassment or Abusive Behavior</option>
+                <option value="Multiple Policy Violations">Multiple Policy Violations</option>
+                <option value="Impersonation / Fake Account">Impersonation / Fake Account</option>
+                <option value="Other">Other</option>
+              </select>
+
+              <textarea 
+                className="admin-textarea" 
+                placeholder="Optional: Provide additional details or specific evidence..."
+                value={suspendReasonText}
+                onChange={(e) => setSuspendReasonText(e.target.value)}
+              />
+              <button onClick={submitSuspension} className="btn-reject full-width-btn light-bg">Enforce Suspension</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* --- FULL DETAILS MODAL (APPLICATIONS) --- */}
       {selectedApp && (
         <div className="modal-overlay" onClick={() => setSelectedApp(null)} style={{zIndex: 9999}}>
@@ -601,7 +806,6 @@ export default function AdminDashboard() {
             <div className="modal-card-header clean-header">
               <div className="header-flex">
                 <h3 style={{ margin: 0 }}>{selectedApp.businessName || 'Unknown Shop'}</h3>
-                {/* OPTIONAL CHAINING FIX (Prevents crash if status is missing) */}
                 <span className={`badge ${selectedApp?.status?.toLowerCase() || 'pending'}`}>{selectedApp.status || 'PENDING'}</span>
               </div>
               <button className="modal-close-btn" onClick={() => setSelectedApp(null)} title="Close">&times;</button>
@@ -640,7 +844,7 @@ export default function AdminDashboard() {
       {rejectingApp && (
         <div className="modal-overlay" onClick={() => setRejectingApp(null)} style={{zIndex: 9999}}>
           <div className="modal-card" onClick={e => e.stopPropagation()}>
-            <div className="modal-card-header danger-header">
+            <div className="modal-card-header danger-header" style={{backgroundColor: '#ef4444'}}>
               <h3 style={{ margin: 0, color: 'white' }}>Rejecting: {rejectingApp.businessName}</h3>
               <button className="modal-close-btn text-white" onClick={() => setRejectingApp(null)}>&times;</button>
             </div>

@@ -92,7 +92,8 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllActiveProducts());
+    public ResponseEntity<List<com.project.campus_marketplace.model.Product>> getAllProducts() {
+        // ENFORCED: This will no longer return disabled items or items from vacationing shops
+        return ResponseEntity.ok(productService.getPublicMarketplaceProducts());
     }
 }

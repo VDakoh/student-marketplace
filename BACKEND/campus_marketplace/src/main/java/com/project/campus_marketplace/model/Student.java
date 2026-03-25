@@ -48,6 +48,9 @@ public class Student {
     @Column(name = "account_status", nullable = false, columnDefinition = "varchar(255) default 'ACTIVE'")
     private String accountStatus = "ACTIVE";
 
+    @Column(name = "suspension_reason", columnDefinition = "TEXT")
+    private String suspensionReason;
+
     // --- ADMIN DASHBOARD HELPERS ---
     // @Transient means "send this to React, but DO NOT save it in the database"
     @Transient
@@ -98,4 +101,7 @@ public class Student {
 
     public Long getListingCount() { return listingCount; }
     public void setListingCount(Long listingCount) { this.listingCount = listingCount; }
+
+    public String getSuspensionReason() { return suspensionReason; }
+    public void setSuspensionReason(String suspensionReason) { this.suspensionReason = suspensionReason; }
 }

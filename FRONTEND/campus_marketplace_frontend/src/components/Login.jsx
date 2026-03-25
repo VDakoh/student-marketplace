@@ -50,7 +50,12 @@ export default function Login() {
     } catch (error) {
       // NEW: SUSPENSION INTERCEPTOR
       if (error.response?.status === 403 && error.response?.data?.error === 'ACCOUNT_SUSPENDED') {
-         navigate('/suspended', { state: { studentId: error.response.data.studentId } });
+         navigate('/suspended', { 
+           state: { 
+             studentId: error.response.data.studentId,
+             reason: error.response.data.reason // PASS THE REASON
+           } 
+         });
          return;
       }
       

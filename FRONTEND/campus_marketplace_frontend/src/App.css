@@ -630,6 +630,7 @@ input[type="file"].auth-input {
   font-weight: bold;
   font-size: 12px;
   transition: background 0.2s;
+  opacity: 1 !important;
 }
 
 .btn-approve:hover {
@@ -815,12 +816,20 @@ input[type="file"].auth-input {
 .status-text.active { color: #16a34a; }
 .status-text.suspended { color: #ef4444; }
 
-.suspended-row { opacity: 0.6; }
+/* Fade all table data cells in a suspended row EXCEPT the last one (the button column) */
+.suspended-row td:not(:last-child) { 
+  opacity: 0.5; 
+}
+
+/* Optional: Add a very subtle grey background to the whole row to emphasize it is inactive */
+.suspended-row {
+  background-color: #f8fafc;
+}
 .empty-table-cell { text-align: center; padding: 30px; color: #64748b; }
 
 /* Buttons & Interactions */
-.btn-sm { padding: 6px 12px; font-size: 12px; }
-.action-btn { display: flex; alignItems: center; gap: 5px; }
+.btn-sm { padding: 6px 12px; font-size: 12px; opacity: 1 !important;}
+.action-btn { display: flex; align-items: center; gap: 5px; opacity: 1 !important; }
 
 .btn-danger-outline {
   background: #fee2e2;
@@ -861,12 +870,6 @@ input[type="file"].auth-input {
 .m-0 { margin: 0 !important; }
 .w-100 { width: 100% !important; }
 .loading-text { color: #64748b; font-weight: bold; margin-top: 20px; }
-
-
-
-
-
-
 
 /* --- ENTERPRISE ADMIN DASHBOARD STYLES ENDS --- */
 
@@ -5338,15 +5341,341 @@ textarea.profile-input {
   border-radius: 8px;
 }
 
-
 /* ADMIN DASHBOARD QUICK FIXES  ENDS*/
-
-
 
 /* =========================================
    ADMIN UI REVAMP & ENHANCEMENTS ENDS
 ========================================= */
 
+
+
+
+
+/* =========================================
+   SUSPENDED ACCOUNT PAGE
+========================================= */
+
+.suspended-card {
+  max-width: 600px;
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.suspended-header {
+  background-color: var(--color-error-bg);
+  border-bottom: 2px solid var(--color-error-text);
+  padding: 30px;
+  text-align: center;
+  color: var(--color-error-text);
+}
+.suspended-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+}
+.suspended-header p {
+  margin: 8px 0 0 0;
+  font-weight: 600;
+}
+.suspended-icon {
+  margin-bottom: 15px;
+}
+
+.suspended-body {
+  padding: 30px;
+}
+
+.suspension-reason-box {
+  background: #f8fafc;
+  border-left: 4px solid var(--color-error-text);
+  padding: 15px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 25px;
+}
+.reason-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-error-text);
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.reason-text {
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+
+/* =========================================
+   APPEALS TAB TRUNCATION & INDICATOR
+========================================= */
+
+
+.appeal-text-truncate {
+  color: #475569;
+  font-size: 14px;
+  padding: 8px 12px;       
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  display: block; 
+  /* CSS truncation removed. JavaScript handles the ellipsis natively! */
+}
+/* The new visual cue to click the row */
+.click-indicator {
+  font-size: 11px;
+  color: var(--color-primary);
+  margin-top: 6px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  opacity: 0.6; /* Faded by default */
+  transition: opacity 0.2s ease;
+}
+
+/* Lights up completely when the mouse hovers over the table row */
+.clickable-row:hover .click-indicator {
+  opacity: 1;
+}
+
+.appeal-section h3 {
+  margin: 0 0 5px 0;
+  color: #1e293b;
+}
+.appeal-subtitle {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+.appeal-textarea {
+  width: 100%;
+  height: 120px;
+  resize: none;
+  margin-bottom: 15px;
+  padding: 15px;
+}
+.action-btn-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.appeal-history-section {
+  margin-top: 40px;
+}
+.history-title {
+  color: #1e293b;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 15px;
+}
+.history-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #f8fafc;
+}
+.history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.history-date {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+.history-reason-text {
+  margin: 0;
+  font-size: 14px;
+  color: #334155;
+  font-style: italic;
+}
+
+.return-link-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 25px;
+  width: 100%;
+  text-align: center;
+  transition: color 0.2s;
+}
+.return-link-btn:hover {
+  color: var(--color-accent);
+}
+
+
+/* SUSPENDED ACCOUNT PAGE - MEDIA QUERIES */
+
+
+@media (max-width: 600px) {
+  /* Reduce header padding and text size for smaller screens */
+  .suspended-header {
+    padding: 20px 15px;
+  }
+  
+  .suspended-header h1 {
+    font-size: 22px;
+  }
+  
+  .suspended-header p {
+    font-size: 14px;
+  }
+
+  .suspended-icon {
+    margin-bottom: 10px;
+  }
+
+  /* Reduce body padding to maximize screen space */
+  .suspended-body {
+    padding: 20px 15px;
+  }
+
+  /* Compact the reason box */
+  .suspension-reason-box {
+    padding: 12px;
+    margin-bottom: 20px;
+  }
+
+  .reason-title {
+    font-size: 12px;
+  }
+
+  .reason-text {
+    font-size: 14px;
+  }
+
+  /* Adjust appeal section sizing */
+  .appeal-subtitle {
+    font-size: 13px;
+  }
+
+  .appeal-textarea {
+    height: 100px;
+    padding: 12px;
+  }
+
+  /* Prevent the history header from squishing the date and badge */
+  .history-card {
+    padding: 12px;
+  }
+
+  .history-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .history-reason-text {
+    font-size: 13px;
+    margin-top: 5px;
+  }
+
+  .return-link-btn {
+    margin-top: 20px;
+    font-size: 14px;
+  }
+}
+
+/* Extra small screens (e.g., older iPhones) */
+@media (max-width: 400px) {
+  .suspended-header h1 {
+    font-size: 20px;
+  }
+  
+  .suspended-body {
+    padding: 15px 12px;
+  }
+}
+/* SUSPENDED ACCOUNT PAGE - MEDIA QUERIES */
+
+/* =========================================
+   SUSPENDED ACCOUNT PAGE ENDS
+========================================= */
+
+
+
+
+/* =========================================
+   GLOBAL ENFORCEMENT & OVERLAYS
+========================================= */
+
+.merchant-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background-color: #fef2f2;
+  color: #ef4444;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  margin-top: 15px;
+  font-size: 14px;
+  width: 100%;
+}
+
+.disabled-pill {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  filter: grayscale(100%);
+  pointer-events: none; /* Physically blocks clicks */
+}
+
+/* Places a frosted, unclickable glass layer exactly over the 
+  products and sidebar area when the store is inactive. 
+*/
+.shop-inactive-overlay {
+  position: absolute;
+  top: 0; 
+  left: 0; 
+  right: 0; 
+  bottom: 0;
+  background: rgba(248, 250, 252, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+  border-radius: 12px;
+  pointer-events: all; /* Catches any stray clicks */
+}
+
+.merchant-status-banner.massive-banner {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background-color: #fef2f2;
+  color: #ef4444;
+  padding: 25px 40px;
+  border-radius: 12px;
+  border: 2px solid #fecaca;
+  box-shadow: 0 15px 35px rgba(239, 68, 68, 0.15);
+  text-align: left;
+  margin-top: 50px;
+  height: 150px;
+}
+
+.disabled-pill {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  filter: grayscale(100%);
+  pointer-events: none;
+}
 
 
 
@@ -5653,4 +5982,6 @@ textarea.profile-input {
 }
 
 
-
+/* =========================================
+   RESPONSIVE MEDIA QUERIES (GLOBAL)
+========================================= */

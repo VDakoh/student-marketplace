@@ -197,4 +197,19 @@ public class ProductService {
         }
         return initials.toString().toUpperCase();
     }
+
+    // --- GLOBAL STATUS ENFORCEMENT: SECURE PUBLIC FEED ---
+    public List<com.project.campus_marketplace.model.Product> getPublicMarketplaceProducts() {
+        // 1. Get a list of IDs for merchants who are ACTIVE
+        List<Integer> activeMerchantIds = merchantProfileRepository.findByStoreStatus("ACTIVE")
+                .stream()
+                .map(com.project.campus_marketplace.model.MerchantProfile::getStudentId)
+                .toList();
+
+        // 2. Fetch all products, but strictly filter out invalid ones
+        return productRepository.findAll().stream()
+                .filter(p -> !"DISABLED".equals(p.getStatus())) // Hide DISABLED completely
+                .filter(p -> activeMerchantIds.contains(p.getMerchantId())) // Hide if Merchant is PAUSED/VACATION
+                .toList();
+    }
 }

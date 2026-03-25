@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import { FiMapPin, FiClock, FiImage, FiSearch, FiFilter, FiGrid, FiChevronDown, FiChevronRight, FiHeart, FiStar, FiInfo, FiX } from 'react-icons/fi';
+import { FiMapPin, FiClock, FiImage, FiSearch, FiFilter, FiGrid, FiChevronDown, FiChevronRight, FiHeart, FiStar, FiInfo, FiX, FiAlertOctagon } from 'react-icons/fi';
 import { FaStore, FaCheckCircle, FaWhatsapp, FaEnvelope } from 'react-icons/fa';
 import Navbar from './Navbar';
 import '../App.css';
@@ -36,8 +36,8 @@ export default function MerchantShop() {
   const [profile, setProfile] = useState(null);
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [ratingData, setRatingData] = useState(null); // <-- NEW RATING STATE
-  const [showRatingInfo, setShowRatingInfo] = useState(false); // <-- NEW STATE
+  const [ratingData, setRatingData] = useState(null); 
+  const [showRatingInfo, setShowRatingInfo] = useState(false); 
   const [loading, setLoading] = useState(true);
 
   const [isFavorited, setIsFavorited] = useState(false);
@@ -90,7 +90,7 @@ export default function MerchantShop() {
         setProducts(merchantOnly);
         setFilteredProducts(merchantOnly);
 
-        // 3. Fetch Ratings (NEW)
+        // 3. Fetch Ratings 
         try {
           const ratingRes = await axios.get(`http://localhost:8081/api/orders/merchant/${actualMerchantId}/ratings`);
           setRatingData(ratingRes.data);
@@ -185,14 +185,31 @@ export default function MerchantShop() {
   const bannerUrl = profile.bannerPath ? getImageUrl(profile.bannerPath) : defaultBanner;
   const waNumber = profile.publicPhone ? profile.publicPhone.replace(/\D/g, '') : '';
 
+  // --- SECURITY LOCKDOWN CHECK ---
+  const isInactive = profile.storeStatus === 'PAUSED' || profile.storeStatus === 'VACATION' || profile.storeStatus === 'SUSPENDED';
+
   return (
     <div className="merchant-page-wrapper">
       <Navbar />
       
       <div className="parallax-banner-bg" style={{ backgroundImage: `url(${defaultBanner})` }} />
 
-      <div className="shop-layout-container">
+      {/* --- WRAP THE ENTIRE LAYOUT IN RELATIVE POSITION FOR THE OVERLAY --- */}
+      <div className="shop-layout-container" style={{ position: 'relative' }}>
         
+        {/* --- FULL PAGE SECURITY OVERLAY --- */}
+        {isInactive && (
+          <div className="shop-inactive-overlay animation-fade-in">
+            <div className="merchant-status-banner massive-banner">
+              <FiAlertOctagon size={32} style={{ flexShrink: 0 }} />
+              <div>
+                <strong style={{ fontSize: '20px', display: 'block' }}>Shop {profile.storeStatus}</strong>
+                <span>This store is currently inactive. Orders and messaging have been disabled.</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="shop-header-glass-card">
           <div className="card-internal-banner" style={{ backgroundImage: `url(${bannerUrl})` }}></div>
           <div className="card-glass-content">
@@ -220,20 +237,17 @@ export default function MerchantShop() {
                <div className="shop-rating-container">
                  <div className="shop-rating-main">
                    
-                   {/* 1. Big Bold Overall Rating */}
                    <div className="overall-rating-box">
                      <FiStar fill="#f59e0b" color="#f59e0b" size={32} />
                      <span className="overall-score">{ratingData.overallRating.toFixed(1)}</span>
                    </div>
                    
-                   {/* 2. Stacked Individual Ratings */}
                    <div className="stacked-ratings">
                      <div className="sub-rating"><span>Service:</span> {ratingData.merchantAverage.toFixed(1)} ⭐</div>
                      <div className="sub-rating"><span>Product:</span> {ratingData.productAverage.toFixed(1)} ⭐</div>
                      <div className="verified-count">{ratingData.totalReviews} Verified Order{ratingData.totalReviews !== 1 ? 's' : ''}</div>
                    </div>
                    
-                   {/* 3. Clickable Info Box */}
                    <div className="rating-info-wrapper" ref={tooltipRef}>
                      <FiInfo 
                        size={18} 
@@ -258,39 +272,49 @@ export default function MerchantShop() {
                  </div>
                </div>
             ) : (
-               <div className="shop-join-date">Active Student Merchant • Babcock University</div>
+               <div className="shop-join-date" style={{ marginTop: isInactive ? '10px' : '0' }}>Active Student Merchant • Babcock University</div>
             )}
             
             <div className="shop-action-pills">
                <button 
-                 onClick={handleToggleFavorite} 
-                 disabled={favLoading}
-                 className="action-pill" 
+                 onClick={isInactive ? null : handleToggleFavorite} 
+                 disabled={favLoading || isInactive}
+                 className={`action-pill ${isInactive ? 'disabled-pill' : ''}`}
                  style={{ 
-                   backgroundColor: isFavorited ? '#fef2f2' : 'white', 
-                   color: isFavorited ? '#ef4444' : '#64748b', 
-                   border: isFavorited ? '1px solid #fecaca' : '1px solid #e2e8f0',
-                   cursor: 'pointer'
+                   backgroundColor: isFavorited && !isInactive ? '#fef2f2' : 'white', 
+                   color: isFavorited && !isInactive ? '#ef4444' : '#64748b', 
+                   border: isFavorited && !isInactive ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                   cursor: isInactive ? 'not-allowed' : 'pointer'
                  }}
                >
-                 <FiHeart fill={isFavorited ? '#ef4444' : 'none'} size={18} /> 
+                 <FiHeart fill={isFavorited && !isInactive ? '#ef4444' : 'none'} size={18} /> 
                  {isFavorited ? 'Favorited' : 'Favorite Shop'}
                </button>
 
+               {/* Disable Contact Links if Inactive */}
                {profile.publicPhone && (
-                 <a href={`https://wa.me/${waNumber}`} target="_blank" rel="noopener noreferrer" className="action-pill whatsapp-pill">
-                   <FaWhatsapp size={18} /> Chat on WhatsApp
-                 </a>
+                 isInactive ? (
+                   <span className="action-pill whatsapp-pill disabled-pill"><FaWhatsapp size={18} /> Chat on WhatsApp</span>
+                 ) : (
+                   <a href={`https://wa.me/${waNumber}`} target="_blank" rel="noopener noreferrer" className="action-pill whatsapp-pill">
+                     <FaWhatsapp size={18} /> Chat on WhatsApp
+                   </a>
+                 )
                )}
                {profile.publicEmail && (
-                 <a href={`mailto:${profile.publicEmail}`} className="action-pill email-pill">
-                   <FaEnvelope size={18} /> Email Merchant
-                 </a>
+                 isInactive ? (
+                   <span className="action-pill email-pill disabled-pill"><FaEnvelope size={18} /> Email Merchant</span>
+                 ) : (
+                   <a href={`mailto:${profile.publicEmail}`} className="action-pill email-pill">
+                     <FaEnvelope size={18} /> Email Merchant
+                   </a>
+                 )
                )}
             </div>
           </div>
         </div>
 
+        {/* --- GRID (Removed the extra wrapper, it is now all under the master wrapper above) --- */}
         <div className="shop-content-grid">
           
           <div className="shop-info-sidebar">
@@ -424,7 +448,7 @@ export default function MerchantShop() {
                <div className="empty-shop-state frosted" style={{ padding: '60px 20px' }}>
                   <FiSearch size={48} color="#cbd5e1" style={{ marginBottom: '15px' }} />
                   <h3 style={{ color: '#1e293b', margin: '0 0 10px 0' }}>No products found</h3>
-                  <p style={{ color: '#64748b', marginBottom: '20px' }}>Adjust your filters or clear them to see more.</p>
+                  <p style={{ color: '#64748b', marginBottom: '20px' }}>{isInactive ? "This shop's inventory is currently hidden." : "Adjust your filters or clear them to see more."}</p>
                   <button className="shop-filter-clear-btn" onClick={clearFilters} style={{ width: 'auto', padding: '10px 20px' }}>Clear Filters</button>
                </div>
              ) : (
