@@ -25,6 +25,9 @@ public class AdminController {
     @Autowired
     private StudentRepository studentRepository;
 
+    @Autowired
+    private com.project.campus_marketplace.repository.BannedKeywordRepository bannedKeywordRepository;
+
     private final AdminService adminService;
 
     public AdminController(AdminService adminService) {
@@ -118,5 +121,39 @@ public class AdminController {
         }
 
         return ResponseEntity.ok(Map.of("message", "Appeal marked as " + resolution));
+    }
+
+    @GetMapping("/keywords")
+    public ResponseEntity<List<com.project.campus_marketplace.model.BannedKeyword>> getBannedKeywords() {
+        return ResponseEntity.ok(bannedKeywordRepository.findAll());
+    }
+
+    @PostMapping("/keywords")
+    public ResponseEntity<?> addBannedKeyword(@RequestBody Map<String, String> payload) {
+        String wordsString = payload.get("word");
+        if (wordsString == null || wordsString.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Keyword cannot be empty.");
+        }
+
+        // Split by comma
+        String[] words = wordsString.split(",");
+        int addedCount = 0;
+
+        for (String w : words) {
+            String cleanWord = w.trim().toLowerCase();
+            // Only add if it's not empty and doesn't already exist
+            if (!cleanWord.isEmpty() && !bannedKeywordRepository.existsByWordIgnoreCase(cleanWord)) {
+                bannedKeywordRepository.save(new com.project.campus_marketplace.model.BannedKeyword(cleanWord));
+                addedCount++;
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("message", addedCount + " keyword(s) added successfully."));
+    }
+
+    @DeleteMapping("/keywords/{id}")
+    public ResponseEntity<?> deleteBannedKeyword(@PathVariable Integer id) {
+        bannedKeywordRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Keyword removed."));
     }
 }

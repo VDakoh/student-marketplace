@@ -30,19 +30,28 @@ public class ProductService {
     @Autowired
     private MerchantProfileRepository merchantProfileRepository;
 
+    @Autowired
+    private com.project.campus_marketplace.repository.BannedKeywordRepository bannedKeywordRepository;
+
     private static final List<String> BANNED_KEYWORDS = List.of(
             "weapon", "gun", "knife", "drugs", "weed", "vape", "exam answers", "fake id", "stolen", "hack", "porn", "sex", "Kush", "gay"
     );
 
     private void validateContentAgainstPolicies(String... fields) throws Exception {
+        // Fetch keywords fresh from the database
+        List<String> bannedKeywords = bannedKeywordRepository.findAll().stream()
+                .map(k -> k.getWord().toLowerCase())
+                .toList();
+
+        if (bannedKeywords.isEmpty()) return; // Skip if admin hasn't set any words
+
         for (String field : fields) {
             if (field == null || field.trim().isEmpty()) continue;
 
             String lowerField = field.toLowerCase();
-            for (String keyword : BANNED_KEYWORDS) {
+            for (String keyword : bannedKeywords) {
                 if (lowerField.contains(keyword)) {
-                    // Instantly reject the listing entirely
-                    throw new Exception("Listing rejected: Contains prohibited content related to university platform policies (" + keyword + ").");
+                    throw new Exception("Listing rejected: Contains prohibited content (" + keyword + ").");
                 }
             }
         }

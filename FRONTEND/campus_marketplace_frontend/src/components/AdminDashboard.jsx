@@ -49,6 +49,10 @@ export default function AdminDashboard() {
   const [suspendReasonType, setSuspendReasonType] = useState('');
   const [suspendReasonText, setSuspendReasonText] = useState('');
 
+  // --- SETTINGS STATES ---
+  const [keywords, setKeywords] = useState([]);
+  const [newKeyword, setNewKeyword] = useState('');
+
   const getFileUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
 
   // --- DATA FETCHING ENGINE ---
@@ -60,6 +64,7 @@ export default function AdminDashboard() {
     if (mainTab === 'APPLICATIONS') fetchApplications();
     if (mainTab === 'USERS') fetchUsers();
     if (mainTab === 'LISTINGS') fetchProducts();
+    if (mainTab === 'SETTINGS') fetchKeywords();
     if (mainTab === 'APPEALS') {
       fetchAppeals();
       if (users.length === 0) fetchUsers(); 
@@ -105,6 +110,36 @@ export default function AdminDashboard() {
       const res = await axios.get('http://localhost:8081/api/admin/appeals', { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
       setAppeals(res.data);
     } catch (e) { console.error(e); } finally { setLoading(false); }
+  };
+
+  const fetchKeywords = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get('http://localhost:8081/api/admin/keywords', { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
+      setKeywords(res.data);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
+  };
+
+  const handleAddKeyword = async (e) => {
+    e.preventDefault();
+    if (!newKeyword.trim()) return;
+    try {
+      const res = await axios.post('http://localhost:8081/api/admin/keywords', { word: newKeyword }, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
+      setNewKeyword('');
+      fetchKeywords();
+      setMessage(res.data.message || "Keyword(s) added to blocklist.");
+    } catch (error) {
+      alert(error.response?.data || "Failed to add keyword.");
+    }
+  };
+
+  const handleDeleteKeyword = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8081/api/admin/keywords/${id}`, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
+      fetchKeywords();
+    } catch (error) {
+      alert("Failed to delete keyword.");
+    }
   };
 
   // --- ADMIN ACTIONS ---
@@ -263,7 +298,7 @@ export default function AdminDashboard() {
             <FiGrid size={18} /> Global Listings
           </div>
 
-          <div className="admin-nav-item" onClick={() => alert("Settings coming in Phase 4!")}>
+          <div className={`admin-nav-item ${mainTab === 'SETTINGS' ? 'active' : ''}`} onClick={() => setMainTab('SETTINGS')}>
             <FiSettings size={18} /> Platform Settings
           </div>
         </div>
@@ -595,6 +630,48 @@ export default function AdminDashboard() {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {/* --- TAB 6: PLATFORM SETTINGS --- */}
+        {mainTab === 'SETTINGS' && (
+          <div className="animation-fade-in">
+             <div className="admin-header-revamp">
+              <h2>Platform <span>Settings</span></h2>
+              <p>Configure automated moderation and global marketplace rules.</p>
+            </div>
+
+            <div className="admin-stat-card" style={{ backgroundColor: 'white', border: '1px solid #e2e8f0', width: '100%', maxWidth: '700px', margin: '0 auto' }}>
+              <h3 style={{ margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#1e293b' }}>
+                <FiShield color="#ef4444" /> Auto-Moderation Blocklist
+              </h3>
+              <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '20px' }}>
+                Any listing containing these keywords in its title, description, or custom category will be instantly blocked from being published.
+              </p>
+
+              <form onSubmit={handleAddKeyword} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                <input 
+                  type="text" 
+                  className="admin-filter-input" 
+                  placeholder="Type banned words separated by commas (e.g., weapon, fake id, drugs)" 
+                  value={newKeyword} 
+                  onChange={(e) => setNewKeyword(e.target.value)}
+                  style={{ flexGrow: 1 }}
+                />
+                <button type="submit" className="btn-approve">Add Words</button>
+              </form>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: '100px' }}>
+                {loading ? <span style={{color: '#94a3b8'}}>Loading keywords...</span> : keywords.length === 0 ? <span style={{color: '#94a3b8', fontStyle: 'italic'}}>No banned keywords added yet.</span> : (
+                  keywords.map(kw => (
+                    <span key={kw.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#fee2e2', color: '#ef4444', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', border: '1px solid #fecaca' }}>
+                      {kw.word}
+                      <FiXCircle size={14} style={{ cursor: 'pointer' }} onClick={() => handleDeleteKeyword(kw.id)} />
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
