@@ -194,7 +194,7 @@ export default function MerchantProductsTab({ email }) {
         setRawImageForCropper(null); 
         
         if (!isModalOpen) setIsModalOpen(true);
-      }, 'image/jpeg', 1);
+      }, 'image/jpeg', 0.7);
 
     } catch (e) {
       console.error("Error cropping image:", e);

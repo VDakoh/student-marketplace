@@ -25,7 +25,7 @@ export default function UserProfile() {
   const [notifUnread, setNotifUnread] = useState(0);
 
   const [activeTab, setActiveTab] = useState('account'); 
-  const [showLogoutModal, setShowLogoutModal] = useState(false); 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -97,6 +97,12 @@ export default function UserProfile() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('jwtToken');
+    setShowLogoutModal(false);
+    navigate('/login');
+  };
+
   return (
     <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       <Navbar />
@@ -154,16 +160,16 @@ export default function UserProfile() {
       </div>
 
       {showLogoutModal && (
-        <div className="modal-overlay" style={{ zIndex: 9999 }}>
-          <div className="modal-card" style={{ maxWidth: '400px', textAlign: 'center', padding: '30px' }}>
+        <div className="modal-overlay" style={{ zIndex: 99999 }}>
+          <div className="modal-card" style={{ maxWidth: '400px', textAlign: 'center', padding: '30px', cursor: 'default' }} onClick={(e) => e.stopPropagation()}>
             <FiAlertTriangle size={40} color="#ef4444" style={{ marginBottom: '15px' }} />
             <h3 style={{ margin: '0 0 10px 0', color: '#1e293b' }}>Confirm Logout</h3>
             <p style={{ color: '#64748b', marginBottom: '25px' }}>
-              Are you sure you want to log out of BU Student Marketplace?
+              Are you sure you want to log out of Babcock Marketplace?
             </p>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button className="btn-discard" onClick={() => setShowLogoutModal(false)} style={{ flex: 1, border: '1px solid #e2e8f0', borderRadius: '6px' }}>Cancel</button>
-              <button className="btn-remove-image" onClick={handleLogout} style={{ flex: 1, marginTop: 0 }}>Yes, Logout</button>
+              <button className="btn-remove-image" onClick={handleLogout} style={{ flex: 1, margin: 0 }}>Yes, Logout</button>
             </div>
           </div>
         </div>

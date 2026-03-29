@@ -2,17 +2,17 @@ package com.project.campus_marketplace.dto;
 
 public class MerchantApplicationDTO {
     private Integer id;
-    private String studentFullName; // The new field fetched from the Student table
+    private String studentFullName;
     private String businessName;
     private String whatsappNumber;
-    private String bio; // We will use this for "Brief Description"
+    private String bio;
     private String idCardPath;
     private String beaMembershipPath;
-    private String selfieImagePath; // Renamed from thirdDocument
+    private String selfieImagePath;
     private String status;
     private String mainProducts;
     private String rejectionReason;
-    private String createdAt; // Sending as a string makes it easier for React to display
+    private String createdAt;
     private long totalApplicationsByUser;
     private Integer studentId;
 

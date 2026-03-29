@@ -2,8 +2,10 @@ package com.project.campus_marketplace.controller;
 
 import com.project.campus_marketplace.model.ChatMessage;
 import com.project.campus_marketplace.model.Order;
+import com.project.campus_marketplace.model.Product;
 import com.project.campus_marketplace.repository.ChatMessageRepository;
 import com.project.campus_marketplace.repository.OrderRepository;
+import com.project.campus_marketplace.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -25,12 +27,15 @@ public class OrderController {
     private ChatMessageRepository chatMessageRepository;
 
     @Autowired
+    private ProductRepository productRepository; // Added for Step 7.5 Validation
+
+    @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
     @Autowired
     private com.project.campus_marketplace.service.NotificationService notificationService;
 
-    // --- 1. INITIAL HANDSHAKE ACCEPTANCE (Your existing code) ---
+    // --- 1. INITIAL HANDSHAKE ACCEPTANCE ---
     @PostMapping("/respond-offer/{messageId}")
     public ResponseEntity<?> respondToOffer(@PathVariable Integer messageId, @RequestBody Map<String, String> payload) {
         String response = payload.get("response");
@@ -43,6 +48,20 @@ public class OrderController {
 
         if (!"PENDING".equals(message.getOfferStatus())) {
             return ResponseEntity.badRequest().body("Offer has already been processed.");
+        }
+
+        // STEP 7.5 BACKEND VALIDATION: Ensure product is valid before accepting order
+        if ("ACCEPTED".equals(response) && message.getProductId() != null) {
+            Optional<Product> pOpt = productRepository.findById(message.getProductId());
+            if (pOpt.isPresent()) {
+                Product p = pOpt.get();
+                if ("DISABLED".equalsIgnoreCase(p.getStatus())) {
+                    return ResponseEntity.badRequest().body("Cannot accept offer. This listing is currently disabled.");
+                }
+                if ("ITEM".equalsIgnoreCase(p.getListingType()) && (p.getStockQuantity() == null || p.getStockQuantity() <= 0)) {
+                    return ResponseEntity.badRequest().body("Cannot accept offer. This item is out of stock.");
+                }
+            }
         }
 
         message.setOfferStatus(response);
@@ -77,19 +96,19 @@ public class OrderController {
         return ResponseEntity.ok(Map.of("message", "Offer " + response.toLowerCase()));
     }
 
-    // --- 2. FETCH BUYER ORDERS (NEW) ---
+    // --- 2. FETCH BUYER ORDERS ---
     @GetMapping("/buyer/{buyerId}")
     public ResponseEntity<List<Order>> getBuyerOrders(@PathVariable Integer buyerId) {
         return ResponseEntity.ok(orderRepository.findByBuyerIdOrderByUpdatedAtDesc(buyerId));
     }
 
-    // --- 3. FETCH MERCHANT ORDERS (NEW) ---
+    // --- 3. FETCH MERCHANT ORDERS ---
     @GetMapping("/merchant/{merchantId}")
     public ResponseEntity<List<Order>> getMerchantOrders(@PathVariable Integer merchantId) {
         return ResponseEntity.ok(orderRepository.findByMerchantIdOrderByUpdatedAtDesc(merchantId));
     }
 
-    // --- 4. UPDATE ORDER STATE MACHINE (NEW) ---
+    // --- 4. UPDATE ORDER STATE MACHINE ---
     @PutMapping("/{orderId}/status")
     public ResponseEntity<?> updateOrderStatus(@PathVariable Integer orderId, @RequestBody Map<String, String> payload) {
         String newStatus = payload.get("status");
@@ -126,7 +145,7 @@ public class OrderController {
         return ResponseEntity.ok(savedOrder);
     }
 
-    // --- 5. SUBMIT TRI-FOLD RATING (NEW) ---
+    // --- 5. SUBMIT TRI-FOLD RATING ---
     @PostMapping("/{orderId}/rate")
     public ResponseEntity<?> rateOrder(@PathVariable Integer orderId, @RequestBody Map<String, Object> payload) {
         Integer userId = Integer.parseInt(payload.get("userId").toString());
@@ -169,7 +188,7 @@ public class OrderController {
         return ResponseEntity.ok(Map.of("message", "Rating submitted successfully!"));
     }
 
-    // --- 6. GET MERCHANT RATING STATS (NEW) ---
+    // --- 6. GET MERCHANT RATING STATS ---
     @GetMapping("/merchant/{merchantId}/ratings")
     public ResponseEntity<Map<String, Object>> getMerchantRatings(@PathVariable Integer merchantId) {
         // Fetch all orders for this merchant

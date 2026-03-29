@@ -1,7 +1,9 @@
 package com.project.campus_marketplace.controller;
 
 import com.project.campus_marketplace.model.ChatMessage;
+import com.project.campus_marketplace.model.Product;
 import com.project.campus_marketplace.repository.ChatMessageRepository;
+import com.project.campus_marketplace.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -31,17 +34,55 @@ public class ChatController {
     @Autowired
     private ChatMessageRepository chatMessageRepository;
 
+    @Autowired
+    private ProductRepository productRepository; // Added for Step 7.5 Validation
+
     // --- 1. REAL-TIME WEBSOCKET LISTENER ---
     @MessageMapping("/chat")
     public void processMessage(@Payload ChatMessage chatMessage) {
-        chatMessage.setTimestamp(LocalDateTime.now());
 
+        // STEP 7.5 BACKEND VALIDATION: Prevent messaging/offers for invalid products
+        if (chatMessage.getProductId() != null) {
+            Optional<Product> productOpt = productRepository.findById(chatMessage.getProductId());
+            if (productOpt.isPresent()) {
+                Product p = productOpt.get();
+
+                // Block if DISABLED
+                if ("DISABLED".equalsIgnoreCase(p.getStatus())) {
+                    sendSystemError(chatMessage, "SYSTEM: This listing is disabled and cannot receive messages or offers.");
+                    return; // Abort saving the message
+                }
+
+                // Block if OUT OF STOCK
+                if ("ITEM".equalsIgnoreCase(p.getListingType()) && (p.getStockQuantity() == null || p.getStockQuantity() <= 0)) {
+                    sendSystemError(chatMessage, "SYSTEM: This item is currently OUT OF STOCK and cannot receive messages or offers.");
+                    return; // Abort saving the message
+                }
+            }
+        }
+
+        chatMessage.setTimestamp(LocalDateTime.now());
         ChatMessage savedMsg = chatMessageRepository.save(chatMessage);
 
         messagingTemplate.convertAndSendToUser(
                 String.valueOf(chatMessage.getReceiverId()),
                 "/queue/messages",
                 savedMsg
+        );
+    }
+
+    // Helper method to bounce back an error message directly to the sender
+    private void sendSystemError(ChatMessage originalMsg, String errorContent) {
+        ChatMessage errorMsg = new ChatMessage();
+        errorMsg.setSenderId(originalMsg.getReceiverId()); // Mocked from receiver to show in chat
+        errorMsg.setReceiverId(originalMsg.getSenderId()); // Send back to the user who attempted it
+        errorMsg.setContent(errorContent);
+        errorMsg.setTimestamp(LocalDateTime.now());
+
+        messagingTemplate.convertAndSendToUser(
+                String.valueOf(originalMsg.getSenderId()),
+                "/queue/messages",
+                errorMsg
         );
     }
 

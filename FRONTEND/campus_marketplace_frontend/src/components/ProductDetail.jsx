@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import { FiChevronLeft, FiChevronRight, FiTag, FiInfo, FiBox, FiMessageCircle, FiArrowLeft, FiImage, FiChevronRight as FiArrowRight, FiX, FiBookmark } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiTag, FiInfo, FiBox, FiMessageCircle, FiArrowLeft, FiImage, FiChevronRight as FiArrowRight, FiX, FiBookmark, FiAlertCircle } from 'react-icons/fi';
 import { FaStore, FaBookmark } from 'react-icons/fa';
 import Navbar from './Navbar';
 import '../App.css';
@@ -47,11 +47,14 @@ export default function ProductDetail() {
             try {
                 setLoading(true);
                 const res = await axios.get('http://localhost:8081/api/products');
+                
+                // STEP 7.5 FIX: Find the requested product FIRST, even if it is DISABLED
+                const foundProduct = res.data.find(p => p.sku === id || p.id.toString() === id);
+                setProduct(foundProduct);
+
+                // Filter ACTIVE products only for the "More from..." sections below
                 const activeProducts = res.data.filter(p => p.status === 'ACTIVE');
                 setAllProducts(activeProducts);
-
-                const foundProduct = activeProducts.find(p => p.sku === id || p.id.toString() === id);
-                setProduct(foundProduct);
 
                 if (currentUserId && foundProduct && token) { 
                     try {
@@ -145,7 +148,7 @@ export default function ProductDetail() {
             state: {
                 startChatWith: product.merchantId,
                 merchantName: merchantProfile?.businessName || `Merchant #${product.merchantId}`,
-                merchantFullName: merchantProfile?.merchantName || "Verified Merchant", // <-- Added this line!
+                merchantFullName: merchantProfile?.merchantName || "Verified Merchant",
                 prefillMessage: inquiryMsg
             }
         });
@@ -173,6 +176,11 @@ export default function ProductDetail() {
             </div>
         </div>
     );
+
+    // STEP 7.5: Status & Stock Variables
+    const isOutOfStock = product.listingType === 'ITEM' && product.stockQuantity <= 0;
+    const isDisabled = product.status === 'DISABLED';
+    const isInteractionLocked = isOutOfStock || isDisabled;
 
     const categoryProducts = allProducts.filter(p => p.category === product.category && p.id !== product.id);
     const displayedCategoryProducts = categoryProducts.slice(0, 4);
@@ -203,8 +211,22 @@ export default function ProductDetail() {
         <div style={{ backgroundColor: '#f4f7f6', minHeight: '100vh' }}>
             <Navbar />
 
-            <div className="product-page-layout animation-fade-in">
-                <div className="product-main-content">
+            <div className="product-page-layout animation-fade-in" style={{ position: 'relative' }}>
+                
+                {/* STEP 7.5 FIX: Disabled Overlay */}
+                {isDisabled && (
+                    <div className="shop-inactive-overlay animation-fade-in" style={{ zIndex: 50, borderRadius: '12px' }}>
+                        <div className="merchant-status-banner massive-banner" style={{ backgroundColor: '#ef4444' }}>
+                            <FiAlertCircle size={32} style={{ flexShrink: 0 }} />
+                            <div>
+                                <strong style={{ fontSize: '20px', display: 'block', color: 'white' }}>Listing Unavailable</strong>
+                                <span style={{ color: '#fee2e2' }}>This item has been hidden or disabled by the merchant or administration.</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="product-main-content" style={{ opacity: isDisabled ? 0.6 : 1, pointerEvents: isDisabled ? 'none' : 'auto' }}>
                     <button onClick={() => navigate('/home')} className="back-btn">
                         <FiArrowLeft size={18} /> Back to Marketplace
                     </button>
@@ -212,7 +234,15 @@ export default function ProductDetail() {
                     <div>
                         <div className="product-detail-card">
                             <div className="product-image-section">
-                                <div className="main-image-wrapper">
+                                <div className="main-image-wrapper" style={{ position: 'relative' }}>
+                                    
+                                    {/* STEP 7.5 FIX: Out of Stock Visual Badge */}
+                                    {isOutOfStock && !isDisabled && (
+                                        <div style={{ position: 'absolute', top: '15px', right: '15px', backgroundColor: '#ef4444', color: 'white', padding: '6px 14px', borderRadius: '20px', fontWeight: 'bold', fontSize: '14px', zIndex: 10, boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                                            OUT OF STOCK
+                                        </div>
+                                    )}
+
                                     {imagesList.length > 0 ? (
                                         <>
                                             <img 
@@ -220,7 +250,7 @@ export default function ProductDetail() {
                                                 alt={product.title} 
                                                 className="main-image" 
                                                 onClick={() => openGallery(currentImageIndex)}
-                                                style={{ cursor: 'pointer' }}
+                                                style={{ cursor: 'pointer', filter: isOutOfStock ? 'grayscale(100%) opacity(70%)' : 'none' }}
                                             />
                                             {imagesList.length > 1 && (
                                                 <>
@@ -238,7 +268,7 @@ export default function ProductDetail() {
                                     <div className="thumbnail-row">
                                         {imagesList.map((img, idx) => (
                                             <div key={idx} className={`thumbnail-box ${idx === currentImageIndex ? 'active' : ''}`} onClick={() => setCurrentImageIndex(idx)}>
-                                                <img src={getImageUrl(img)} alt={`Thumbnail ${idx}`} />
+                                                <img src={getImageUrl(img)} alt={`Thumbnail ${idx}`} style={{ filter: isOutOfStock ? 'grayscale(100%) opacity(70%)' : 'none' }} />
                                             </div>
                                         ))}
                                     </div>
@@ -247,7 +277,9 @@ export default function ProductDetail() {
                             <div className="product-info-section">
                                 <div className="product-header">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-                                        <h1 className="product-title">{product.title}</h1>
+                                        <h1 className="product-title" style={{ color: isOutOfStock ? '#64748b' : '#1e293b' }}>
+                                            {product.title}
+                                        </h1>
                                         
                                         <button 
                                             onClick={handleToggleSave} 
@@ -263,7 +295,7 @@ export default function ProductDetail() {
                                             {isSaved ? 'Saved' : 'Save Item'}
                                         </button>
                                     </div>
-                                    <div className="product-price">₦{product.price.toLocaleString()}</div>
+                                    <div className="product-price" style={{ color: isOutOfStock ? '#94a3b8' : '#16a34a' }}>₦{product.price.toLocaleString()}</div>
                                 </div>
                                 <div className="product-meta-tags">
                                     <span className={`meta-tag type-tag ${product.listingType === 'SERVICE' ? 'service' : ''}`}>{product.listingType}</span>
@@ -271,7 +303,9 @@ export default function ProductDetail() {
                                     {product.listingType === 'ITEM' && (
                                         <>
                                             <span className="meta-tag"><FiInfo /> {product.itemCondition}</span>
-                                            <span className="meta-tag"><FiBox /> {product.stockQuantity} in stock</span>
+                                            <span className="meta-tag" style={{ color: isOutOfStock ? '#ef4444' : 'inherit', fontWeight: isOutOfStock ? 'bold' : 'normal' }}>
+                                                <FiBox /> {isOutOfStock ? '0' : product.stockQuantity} in stock
+                                            </span>
                                         </>
                                     )}
                                 </div>
@@ -282,12 +316,24 @@ export default function ProductDetail() {
                                     </div>
                                 </div>
 
-                                {/* --- NEW ACTION BUTTON ZONE --- */}
+                                {/* STEP 7.5 FIX: Message Button Lockdown */}
                                 <div className="product-actions-box">
-                                    <button className="btn-contact-merchant" onClick={handleMessageMerchant}>
-                                        <FiMessageCircle size={22} /> Message Merchant
+                                    <button 
+                                        className="btn-contact-merchant" 
+                                        onClick={handleMessageMerchant}
+                                        disabled={isInteractionLocked}
+                                        style={{ 
+                                            backgroundColor: isInteractionLocked ? '#cbd5e1' : 'var(--color-primary)',
+                                            cursor: isInteractionLocked ? 'not-allowed' : 'pointer',
+                                            color: isInteractionLocked ? '#64748b' : 'white'
+                                        }}
+                                    >
+                                        <FiMessageCircle size={22} /> 
+                                        {isDisabled ? 'Listing Unavailable' : isOutOfStock ? 'Item is Out of Stock' : 'Message Merchant'}
                                     </button>
-                                    <p className="action-hint">Negotiate prices and arrange delivery directly through your inbox.</p>
+                                    <p className="action-hint">
+                                        {isInteractionLocked ? 'Inquiries are currently disabled for this item.' : 'Negotiate prices and arrange delivery directly through your inbox.'}
+                                    </p>
                                 </div>
 
                             </div>
@@ -323,7 +369,7 @@ export default function ProductDetail() {
                     </div>
                 </div>
 
-                <div className="product-sidebar">
+                <div className="product-sidebar" style={{ opacity: isDisabled ? 0.6 : 1, pointerEvents: isDisabled ? 'none' : 'auto' }}>
                     <div className="merchant-preview-card">
                         <div className="merchant-preview-header">
                             {merchantProfile?.logoPath ? (
