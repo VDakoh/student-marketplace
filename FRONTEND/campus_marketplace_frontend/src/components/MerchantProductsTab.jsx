@@ -32,7 +32,7 @@ export default function MerchantProductsTab({ email }) {
   const [selectedProduct, setSelectedProduct] = useState(null); 
   const [editingProductId, setEditingProductId] = useState(null); 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0); // Added for the Carousel
+  const [currentImageIndex, setCurrentImageIndex] = useState(0); 
   const fileInputRef = useRef(null);
   
   // Cropping States
@@ -48,7 +48,6 @@ export default function MerchantProductsTab({ email }) {
     itemCondition: 'New', stockQuantity: 1
   });
   
-  // --- MULTI-IMAGE STATE ---
   const [images, setImages] = useState([]); 
 
   const getImageUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
@@ -78,7 +77,7 @@ export default function MerchantProductsTab({ email }) {
 
   const handleProductClick = (product) => {
     setSelectedProduct(product);
-    setCurrentImageIndex(0); // Always start carousel at the thumbnail
+    setCurrentImageIndex(0); 
   };
 
   const handleEditClick = (product, e) => {
@@ -93,17 +92,16 @@ export default function MerchantProductsTab({ email }) {
       category: product.category || '',
       customCategory: product.customCategory || '',
       itemCondition: product.itemCondition || 'New',
-      stockQuantity: product.stockQuantity || 1
+      stockQuantity: product.stockQuantity !== null ? product.stockQuantity : 1
     });
     
-    // --- LOAD THE FULL IMAGE ARRAY FOR EDITING ---
     const existingImages = product.imagePaths && product.imagePaths.length > 0 
       ? product.imagePaths 
       : (product.imagePath ? [product.imagePath] : []);
 
     const loadedImages = existingImages.map((path, idx) => ({
       id: `existing-${idx}-${Date.now()}`,
-      file: null, // Null file means it already exists on the server
+      file: null, 
       previewUrl: getImageUrl(path)
     }));
     
@@ -135,6 +133,49 @@ export default function MerchantProductsTab({ email }) {
       console.error(error);
     }
   };
+
+  // --- NEW QUICK ACTIONS (STEP 7.5) ---
+  const handleToggleStatus = async (productId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const token = localStorage.getItem('jwtToken');
+      await axios.put(`http://localhost:8081/api/products/${productId}/toggle-status?email=${email}`, {}, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      // Update local modal state if open
+      if (selectedProduct && selectedProduct.id === productId) {
+          setSelectedProduct(prev => ({ ...prev, status: prev.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE' }));
+      }
+      
+      fetchProducts();
+    } catch (error) {
+      alert("Failed to toggle listing status.");
+      console.error(error);
+    }
+  };
+
+  const handleMarkOutOfStock = async (productId, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm("Mark this item as Out of Stock?")) return;
+
+    try {
+      const token = localStorage.getItem('jwtToken');
+      await axios.put(`http://localhost:8081/api/products/${productId}/mark-out-of-stock?email=${email}`, {}, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (selectedProduct && selectedProduct.id === productId) {
+          setSelectedProduct(prev => ({ ...prev, stockQuantity: 0 }));
+      }
+
+      fetchProducts();
+    } catch (error) {
+      alert("Failed to update stock quantity.");
+      console.error(error);
+    }
+  };
+
 
   // --- IMAGE & CROPPING LOGIC ---
 
@@ -252,7 +293,6 @@ export default function MerchantProductsTab({ email }) {
     }
     
     images.forEach((img) => {
-      // Only append new files (existing ones will be kept safely by the backend)
       if (img.file) {
         data.append('images', img.file); 
       }
@@ -315,21 +355,41 @@ export default function MerchantProductsTab({ email }) {
       {/* INVENTORY GRID */}
       <div className="inventory-grid">
         {products.map((product) => {
-          // Identify the thumbnail (First image in the array)
           const thumbPath = (product.imagePaths && product.imagePaths.length > 0) ? product.imagePaths[0] : product.imagePath;
+          const isOutOfStock = product.listingType === 'ITEM' && product.stockQuantity <= 0;
 
           return (
-            <div key={product.id} className="inventory-card" onClick={() => handleProductClick(product)} style={{ cursor: 'pointer' }}>
-              <div className="inventory-image-placeholder" style={{ padding: 0, opacity: product.status === 'PAUSED' ? 0.5 : 1, position: 'relative', width: '100%', paddingBottom: '100%', height: 0, overflow: 'hidden' }}>
+            <div key={product.id} className="inventory-card" onClick={() => handleProductClick(product)} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
+              <div className="inventory-image-placeholder" style={{ padding: 0, position: 'relative', width: '100%', paddingBottom: '100%', height: 0, overflow: 'hidden' }}>
                 {thumbPath ? (
-                  <img src={getImageUrl(thumbPath)} alt={product.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img 
+                    src={getImageUrl(thumbPath)} 
+                    alt={product.title} 
+                    style={{ 
+                      position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover',
+                      filter: product.status === 'DISABLED' || isOutOfStock ? 'grayscale(100%) opacity(70%)' : 'none'
+                    }} 
+                  />
                 ) : (
                   <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
                      <FiImage size={40} color="#cbd5e1" />
                   </div>
                 )}
+                
+                {/* Visual Badges inside Card */}
+                {isOutOfStock && product.status === 'ACTIVE' && (
+                  <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold' }}>
+                    OUT OF STOCK
+                  </div>
+                )}
+                {product.status === 'DISABLED' && (
+                  <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: '#475569', color: 'white', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold' }}>
+                    HIDDEN
+                  </div>
+                )}
               </div>
-              <div className="inventory-details">
+              
+              <div className="inventory-details" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <h4 className="inventory-title" title={product.title}>{product.title}</h4>
                 <div className="inventory-price">₦{product.price.toLocaleString()}</div>
                 
@@ -339,18 +399,58 @@ export default function MerchantProductsTab({ email }) {
                     <span style={{ fontSize: '10px', color: '#94a3b8' }}>
                       {product.category === 'Other...' && product.customCategory ? product.customCategory : product.category}
                     </span>
-                    <span style={{ color: product.status === 'ACTIVE' ? '#166534' : '#94a3b8', backgroundColor: product.status === 'ACTIVE' ? '#dcfce3' : '#f1f5f9', padding: '2px 6px', borderRadius: '12px', fontSize: '10px' }}>
-                      {product.status}
-                    </span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                  <button className="btn-outline" onClick={(e) => handleEditClick(product, e)} style={{ flex: 1, padding: '8px', display: 'flex', justifyContent: 'center', fontSize: '12px', gap: '5px' }}>
-                    <FiEdit2 size={14} /> Edit
+                {/* --- QUICK ACTIONS ROW (Toggle & Zero Stock) --- */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                  
+                  <div 
+                    onClick={(e) => handleToggleStatus(product.id, e)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                  >
+                    <div style={{
+                      width: '32px', height: '18px', backgroundColor: product.status === 'ACTIVE' ? '#10b981' : '#cbd5e1',
+                      borderRadius: '10px', position: 'relative', transition: 'background-color 0.2s ease'
+                    }}>
+                      <div style={{
+                        width: '14px', height: '14px', backgroundColor: 'white', borderRadius: '50%',
+                        position: 'absolute', top: '2px', left: product.status === 'ACTIVE' ? '16px' : '2px',
+                        transition: 'left 0.2s ease', boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                      }}/>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: product.status === 'ACTIVE' ? '#10b981' : '#64748b' }}>
+                      {product.status === 'ACTIVE' ? 'Active' : 'Disabled'}
+                    </span>
+                  </div>
+
+                  {product.listingType === 'ITEM' && product.stockQuantity > 0 && (
+                    <button 
+                      className="btn-outline" 
+                      onClick={(e) => handleMarkOutOfStock(product.id, e)}
+                      style={{ padding: '4px 8px', fontSize: '10px', borderColor: '#fecaca', color: '#ef4444', backgroundColor: '#fef2f2', borderRadius: '6px' }}
+                    >
+                      Set 0 Stock
+                    </button>
+                  )}
+                  {product.listingType === 'SERVICE' && product.stockQuantity > 0 && (
+                    <button 
+                      className="btn-outline" 
+                      onClick={(e) => handleMarkOutOfStock(product.id, e)}
+                      style={{ padding: '4px 8px', fontSize: '10px', borderColor: '#fecaca', color: '#ef4444', backgroundColor: '#fef2f2', borderRadius: '6px' }}
+                    >
+                      Not Offering
+                    </button>
+                  )}
+                </div>
+
+                {/* Edit / Delete Row */}
+                <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                  <button className="btn-outline" onClick={(e) => handleEditClick(product, e)} style={{ flex: 1, padding: '6px', display: 'flex', justifyContent: 'center', fontSize: '12px', gap: '5px' }}>
+                    <FiEdit2 size={12} /> Edit
                   </button>
-                  <button className="btn-outline" onClick={(e) => handleDeleteClick(product.id, e)} style={{ padding: '8px', color: '#ef4444', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}>
-                    <FiTrash2 size={14} />
+                  <button className="btn-outline" onClick={(e) => handleDeleteClick(product.id, e)} style={{ padding: '6px 10px', color: '#64748b', borderColor: '#e2e8f0' }}>
+                    <FiTrash2 size={12} />
                   </button>
                 </div>
               </div>
@@ -435,9 +535,18 @@ export default function MerchantProductsTab({ email }) {
                   <h2 style={{ margin: '0 0 5px 0', color: '#1e293b', fontSize: '22px' }}>{selectedProduct.title}</h2>
                   <div style={{ color: 'var(--color-primary)', fontWeight: 'bold', fontSize: '24px' }}>₦{selectedProduct.price.toLocaleString()}</div>
                 </div>
-                <span style={{ color: selectedProduct.status === 'ACTIVE' ? '#166534' : '#94a3b8', backgroundColor: selectedProduct.status === 'ACTIVE' ? '#dcfce3' : '#f1f5f9', padding: '4px 12px', borderRadius: '15px', fontSize: '12px', fontWeight: 'bold' }}>
-                  {selectedProduct.status}
-                </span>
+                
+                {/* Modal Status Header */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                  <span style={{ color: selectedProduct.status === 'ACTIVE' ? '#166534' : '#64748b', backgroundColor: selectedProduct.status === 'ACTIVE' ? '#dcfce3' : '#f1f5f9', padding: '4px 12px', borderRadius: '15px', fontSize: '12px', fontWeight: 'bold' }}>
+                    {selectedProduct.status}
+                  </span>
+                  {selectedProduct.stockQuantity <= 0 && (
+                     <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '12px' }}>
+                       {selectedProduct.listingType === 'SERVICE' ? 'NOT OFFERING' : 'OUT OF STOCK'}
+                     </span>
+                  )}
+                </div>
               </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
@@ -449,7 +558,7 @@ export default function MerchantProductsTab({ email }) {
                     <span style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b', padding: '6px 12px', borderRadius: '6px', fontSize: '13px' }}>
                       <FiInfo size={14} /> {selectedProduct.itemCondition}
                     </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b', padding: '6px 12px', borderRadius: '6px', fontSize: '13px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: selectedProduct.stockQuantity > 0 ? '#64748b' : '#ef4444', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: selectedProduct.stockQuantity <= 0 ? 'bold' : 'normal' }}>
                       <FiBox size={14} /> {selectedProduct.stockQuantity} in stock
                     </span>
                   </>
@@ -528,7 +637,6 @@ export default function MerchantProductsTab({ email }) {
                     <div key={img.id} style={{ position: 'relative', width: '120px', height: '120px', flexShrink: 0, borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                       <img src={img.previewUrl} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       
-                      {/* --- THUMBNAIL INDICATOR --- */}
                       {index === 0 && (
                         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', fontSize: '10px', textAlign: 'center', padding: '4px 0', fontWeight: 'bold', letterSpacing: '1px' }}>
                           THUMBNAIL
@@ -551,7 +659,6 @@ export default function MerchantProductsTab({ email }) {
                   )}
 
                 </div>
-                {/* Thumbnail Helper Text */}
                 <p style={{ fontSize: '12px', color: '#64748b', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <FiInfo size={14}/> The first image will be used as the product thumbnail on the marketplace.
                 </p>
@@ -605,24 +712,33 @@ export default function MerchantProductsTab({ email }) {
                   </div>
                 )}
 
+                {/* --- FOR BOTH ITEMS & SERVICES (STEP 7.5 UPDATE) --- */}
                 {formData.listingType === 'ITEM' && (
-                  <>
-                    <div className="profile-form-group animation-fade-in" style={{ marginTop: '10px', paddingTop: '15px', borderTop: '1px dashed #e2e8f0' }}>
-                      <label className="profile-label">Condition <span style={{ color: '#ef4444' }}>*</span></label>
-                      <select name="itemCondition" className="profile-input" value={formData.itemCondition} onChange={handleChange} required>
-                        <option value="New">Brand New</option>
-                        <option value="Used - Like New">Used - Like New</option>
-                        <option value="Used - Good">Used - Good</option>
-                        <option value="Used - Fair">Used - Fair</option>
-                      </select>
-                    </div>
-
-                    <div className="profile-form-group animation-fade-in" style={{ marginTop: '10px', paddingTop: '15px', borderTop: '1px dashed #e2e8f0' }}>
-                      <label className="profile-label">Quantity in Stock <span style={{ color: '#ef4444' }}>*</span></label>
-                      <input type="number" name="stockQuantity" required min="1" className="profile-input" value={formData.stockQuantity} onChange={handleChange} />
-                    </div>
-                  </>
+                  <div className="profile-form-group animation-fade-in" style={{ marginTop: '10px', paddingTop: '15px', borderTop: '1px dashed #e2e8f0' }}>
+                    <label className="profile-label">Condition <span style={{ color: '#ef4444' }}>*</span></label>
+                    <select name="itemCondition" className="profile-input" value={formData.itemCondition} onChange={handleChange} required>
+                      <option value="New">Brand New</option>
+                      <option value="Used - Like New">Used - Like New</option>
+                      <option value="Used - Good">Used - Good</option>
+                      <option value="Used - Fair">Used - Fair</option>
+                    </select>
+                  </div>
                 )}
+
+                <div className="profile-form-group animation-fade-in" style={{ marginTop: '10px', paddingTop: '15px', borderTop: '1px dashed #e2e8f0' }}>
+                  <label className="profile-label">
+                    {formData.listingType === 'ITEM' ? 'Quantity in Stock' : 'Service Capacity'} <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  {/* CHANGED: min is now 0 */}
+                  <input type="number" name="stockQuantity" required min="0" className="profile-input" value={formData.stockQuantity} onChange={handleChange} />
+                  
+                  {/* Dynamic Warning for 0 Stock */}
+                  {(formData.stockQuantity === 0 || formData.stockQuantity === "0") && (
+                    <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px', fontWeight: 'bold' }}>
+                      ⚠️ This will instantly mark the listing as {formData.listingType === 'ITEM' ? "OUT OF STOCK" : "NOT OFFERING"}.
+                    </p>
+                  )}
+                </div>
 
                 <div className="profile-form-group full-width" style={{ marginTop: '10px', paddingTop: '15px', borderTop: '1px dashed #e2e8f0' }}>
                   <label className="profile-label">Description <span style={{ color: '#ef4444' }}>*</span></label>

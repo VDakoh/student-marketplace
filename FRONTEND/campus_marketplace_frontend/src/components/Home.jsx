@@ -345,16 +345,42 @@ export default function Home() {
               {filteredProducts.map((product) => {
                 const thumbPath = (product.imagePaths && product.imagePaths.length > 0) ? product.imagePaths[0] : product.imagePath;
                 const safePrice = product.price ? product.price.toLocaleString() : '0';
+                const isOutOfStock = product.stockQuantity <= 0;
 
                 return (
                   <div key={product.id} className="inventory-card" onClick={() => handleProductClick(product)} style={{ cursor: 'pointer', backgroundColor: 'white' }}>
                     <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', height: 0, overflow: 'hidden', backgroundColor: '#f1f5f9' }}>
                       {thumbPath ? (
-                        <img src={getImageUrl(thumbPath)} alt={product.title || 'Product'} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img 
+                          src={getImageUrl(thumbPath)} 
+                          alt={product.title || 'Product'} 
+                          style={{ 
+                            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover',
+                            filter: isOutOfStock ? 'grayscale(100%)' : 'none' 
+                          }} 
+                        />
                       ) : (
-                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}><FiImage size={30} /></div>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                          <FiImage size={30} />
+                        </div>
                       )}
-                      <div style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: product.listingType === 'ITEM' ? 'var(--color-accent)' : '#0ea5e9', color: product.listingType === 'ITEM' ? 'var(--color-primary-dark)' : 'white', padding: '4px 10px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px' }}>
+
+                      {/* --- STEP 7.5 OVERLAY FIX --- */}
+                      {isOutOfStock && (
+                        <div style={{
+                          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                          backgroundColor: 'rgba(255, 255, 255, 0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10
+                        }}>
+                          <span style={{
+                            backgroundColor: '#ef4444', color: 'white', padding: '6px 12px', borderRadius: '6px',
+                            fontWeight: 'bold', fontSize: '12px', letterSpacing: '0.5px', boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                          }}>
+                            {product.listingType === 'SERVICE' ? 'NOT OFFERING' : 'OUT OF STOCK'}
+                          </span>
+                        </div>
+                      )}
+
+                      <div style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: product.listingType === 'ITEM' ? 'var(--color-accent)' : '#0ea5e9', color: product.listingType === 'ITEM' ? 'var(--color-primary-dark)' : 'white', padding: '4px 10px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', zIndex: 11 }}>
                         {product.listingType || 'ITEM'}
                       </div>
                     </div>

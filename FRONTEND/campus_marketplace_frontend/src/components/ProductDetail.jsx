@@ -23,7 +23,7 @@ export default function ProductDetail() {
 
     const [loading, setLoading] = useState(true);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    
+
     // --- GALLERY UI STATES ---
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
@@ -36,7 +36,7 @@ export default function ProductDetail() {
     if (token) {
         try {
             const decoded = jwtDecode(token);
-            currentUserId = decoded.id || decoded.studentId || decoded.userId; 
+            currentUserId = decoded.id || decoded.studentId || decoded.userId;
         } catch (err) { console.error("Invalid token"); }
     }
 
@@ -47,7 +47,7 @@ export default function ProductDetail() {
             try {
                 setLoading(true);
                 const res = await axios.get('http://localhost:8081/api/products');
-                
+
                 // STEP 7.5 FIX: Find the requested product FIRST, even if it is DISABLED
                 const foundProduct = res.data.find(p => p.sku === id || p.id.toString() === id);
                 setProduct(foundProduct);
@@ -56,10 +56,10 @@ export default function ProductDetail() {
                 const activeProducts = res.data.filter(p => p.status === 'ACTIVE');
                 setAllProducts(activeProducts);
 
-                if (currentUserId && foundProduct && token) { 
+                if (currentUserId && foundProduct && token) {
                     try {
                         const savedRes = await axios.get(`http://localhost:8081/api/saved-items/${currentUserId}`, {
-                            headers: { Authorization: `Bearer ${token}` } 
+                            headers: { Authorization: `Bearer ${token}` }
                         });
                         const alreadySaved = savedRes.data.some(item => item.productId === foundProduct.id);
                         setIsSaved(alreadySaved);
@@ -81,7 +81,7 @@ export default function ProductDetail() {
             }
         };
         fetchData();
-    }, [id, currentUserId]); 
+    }, [id, currentUserId]);
 
     const imagesList = product?.imagePaths && product.imagePaths.length > 0 ? product.imagePaths : (product?.imagePath ? [product.imagePath] : []);
 
@@ -115,9 +115,9 @@ export default function ProductDetail() {
                 studentId: currentUserId,
                 productId: product.id
             }, {
-                headers: { Authorization: `Bearer ${token}` } 
+                headers: { Authorization: `Bearer ${token}` }
             });
-            setIsSaved(res.data.saved); 
+            setIsSaved(res.data.saved);
         } catch (error) {
             console.error("Failed to toggle saved item", error);
             if (error.response && error.response.status === 403) {
@@ -136,14 +136,14 @@ export default function ProductDetail() {
             navigate('/login');
             return;
         }
-        
+
         if (currentUserId === product.merchantId) {
             alert("You cannot message yourself. This is your own product!");
             return;
         }
 
         const inquiryMsg = `Hello ${merchantProfile?.merchantName || 'there'}, I saw your listing for "${product.title}" and would like to make an inquiry. Is it still available?`;
-        
+
         navigate('/profile?tab=inbox', {
             state: {
                 startChatWith: product.merchantId,
@@ -178,7 +178,7 @@ export default function ProductDetail() {
     );
 
     // STEP 7.5: Status & Stock Variables
-    const isOutOfStock = product.listingType === 'ITEM' && product.stockQuantity <= 0;
+    const isOutOfStock = product.stockQuantity <= 0;
     const isDisabled = product.status === 'DISABLED';
     const isInteractionLocked = isOutOfStock || isDisabled;
 
@@ -212,7 +212,7 @@ export default function ProductDetail() {
             <Navbar />
 
             <div className="product-page-layout animation-fade-in" style={{ position: 'relative' }}>
-                
+
                 {/* STEP 7.5 FIX: Disabled Overlay */}
                 {isDisabled && (
                     <div className="shop-inactive-overlay animation-fade-in" style={{ zIndex: 50, borderRadius: '12px' }}>
@@ -235,20 +235,19 @@ export default function ProductDetail() {
                         <div className="product-detail-card">
                             <div className="product-image-section">
                                 <div className="main-image-wrapper" style={{ position: 'relative' }}>
-                                    
-                                    {/* STEP 7.5 FIX: Out of Stock Visual Badge */}
+                                    {/* STEP 7.5 FIX: Out of Stock / Not Offering Visual Badge */}
                                     {isOutOfStock && !isDisabled && (
                                         <div style={{ position: 'absolute', top: '15px', right: '15px', backgroundColor: '#ef4444', color: 'white', padding: '6px 14px', borderRadius: '20px', fontWeight: 'bold', fontSize: '14px', zIndex: 10, boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                                            OUT OF STOCK
+                                            {product.listingType === 'SERVICE' ? 'NOT OFFERING' : 'OUT OF STOCK'}
                                         </div>
                                     )}
 
                                     {imagesList.length > 0 ? (
                                         <>
-                                            <img 
-                                                src={getImageUrl(imagesList[currentImageIndex])} 
-                                                alt={product.title} 
-                                                className="main-image" 
+                                            <img
+                                                src={getImageUrl(imagesList[currentImageIndex])}
+                                                alt={product.title}
+                                                className="main-image"
                                                 onClick={() => openGallery(currentImageIndex)}
                                                 style={{ cursor: 'pointer', filter: isOutOfStock ? 'grayscale(100%) opacity(70%)' : 'none' }}
                                             />
@@ -280,12 +279,12 @@ export default function ProductDetail() {
                                         <h1 className="product-title" style={{ color: isOutOfStock ? '#64748b' : '#1e293b' }}>
                                             {product.title}
                                         </h1>
-                                        
-                                        <button 
-                                            onClick={handleToggleSave} 
+
+                                        <button
+                                            onClick={handleToggleSave}
                                             disabled={saveLoading}
                                             style={{
-                                                background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', 
+                                                background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px',
                                                 padding: '10px 15px', display: 'flex', alignItems: 'center', gap: '8px',
                                                 cursor: 'pointer', color: isSaved ? '#16a34a' : '#64748b',
                                                 fontWeight: '600', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
@@ -318,18 +317,20 @@ export default function ProductDetail() {
 
                                 {/* STEP 7.5 FIX: Message Button Lockdown */}
                                 <div className="product-actions-box">
-                                    <button 
-                                        className="btn-contact-merchant" 
+                                    <button
+                                        className="btn-contact-merchant"
                                         onClick={handleMessageMerchant}
                                         disabled={isInteractionLocked}
-                                        style={{ 
+                                        style={{
                                             backgroundColor: isInteractionLocked ? '#cbd5e1' : 'var(--color-primary)',
                                             cursor: isInteractionLocked ? 'not-allowed' : 'pointer',
                                             color: isInteractionLocked ? '#64748b' : 'white'
                                         }}
                                     >
-                                        <FiMessageCircle size={22} /> 
-                                        {isDisabled ? 'Listing Unavailable' : isOutOfStock ? 'Item is Out of Stock' : 'Message Merchant'}
+                                        <FiMessageCircle size={22} />
+                                        {isDisabled ? 'Listing Unavailable' :
+                                            isOutOfStock ? (product.listingType === 'SERVICE' ? 'Service Currently Unavailable' : 'Item is Out of Stock') :
+                                                'Message Merchant'}
                                     </button>
                                     <p className="action-hint">
                                         {isInteractionLocked ? 'Inquiries are currently disabled for this item.' : 'Negotiate prices and arrange delivery directly through your inbox.'}
@@ -444,35 +445,35 @@ export default function ProductDetail() {
 
             {isGalleryOpen && imagesList.length > 0 && (
                 <div className="gallery-overlay" onClick={closeGallery}>
-                
-                <button className="gallery-close" onClick={closeGallery}>
-                    <FiX size={32} />
-                </button>
 
-                {imagesList.length > 1 && (
-                    <button className="gallery-nav left" onClick={prevImage}>
-                    <FiChevronLeft size={40} />
+                    <button className="gallery-close" onClick={closeGallery}>
+                        <FiX size={32} />
                     </button>
-                )}
 
-                <img 
-                    src={getImageUrl(imagesList[currentImageIndex])} 
-                    alt={`Expanded view ${currentImageIndex + 1}`}
-                    className="gallery-expanded-img"
-                    onClick={(e) => e.stopPropagation()}
-                />
+                    {imagesList.length > 1 && (
+                        <button className="gallery-nav left" onClick={prevImage}>
+                            <FiChevronLeft size={40} />
+                        </button>
+                    )}
 
-                {imagesList.length > 1 && (
-                    <button className="gallery-nav right" onClick={nextImage}>
-                    <FiChevronRight size={40} />
-                    </button>
-                )}
+                    <img
+                        src={getImageUrl(imagesList[currentImageIndex])}
+                        alt={`Expanded view ${currentImageIndex + 1}`}
+                        className="gallery-expanded-img"
+                        onClick={(e) => e.stopPropagation()}
+                    />
 
-                {imagesList.length > 1 && (
-                    <div className="gallery-counter">
-                    {currentImageIndex + 1} / {imagesList.length}
-                    </div>
-                )}
+                    {imagesList.length > 1 && (
+                        <button className="gallery-nav right" onClick={nextImage}>
+                            <FiChevronRight size={40} />
+                        </button>
+                    )}
+
+                    {imagesList.length > 1 && (
+                        <div className="gallery-counter">
+                            {currentImageIndex + 1} / {imagesList.length}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

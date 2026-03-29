@@ -53,9 +53,9 @@ public class ChatController {
                     return; // Abort saving the message
                 }
 
-                // Block if OUT OF STOCK
-                if ("ITEM".equalsIgnoreCase(p.getListingType()) && (p.getStockQuantity() == null || p.getStockQuantity() <= 0)) {
-                    sendSystemError(chatMessage, "SYSTEM: This item is currently OUT OF STOCK and cannot receive messages or offers.");
+                // Block if OUT OF STOCK or NOT OFFERING
+                if (p.getStockQuantity() == null || p.getStockQuantity() <= 0) {
+                    String errorType = "SERVICE".equalsIgnoreCase(p.getListingType()) ? "NOT OFFERING" : "OUT OF STOCK";
                     return; // Abort saving the message
                 }
             }

@@ -153,6 +153,68 @@ public class ProductService {
         productRepository.delete(product);
     }
 
+    // --- MERCHANT INVENTORY CONTROLS (STEP 7.5) ---
+
+    // Toggle Status between ACTIVE and DISABLED
+    public Product toggleProductStatus(Integer productId, String email) throws Exception {
+        Student merchant = studentRepository.findByBabcockEmail(email)
+                .orElseThrow(() -> new Exception("Merchant not found"));
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new Exception("Product not found"));
+
+        if (!product.getMerchantId().equals(merchant.getId())) {
+            throw new Exception("Unauthorized to edit this product");
+        }
+
+        if ("DISABLED".equalsIgnoreCase(product.getStatus())) {
+            product.setStatus("ACTIVE");
+        } else {
+            product.setStatus("DISABLED");
+        }
+
+        return productRepository.save(product);
+    }
+
+    // Quick-action to mark stock to 0
+    public Product markOutOfStock(Integer productId, String email) throws Exception {
+        Student merchant = studentRepository.findByBabcockEmail(email)
+                .orElseThrow(() -> new Exception("Merchant not found"));
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new Exception("Product not found"));
+
+        if (!product.getMerchantId().equals(merchant.getId())) {
+            throw new Exception("Unauthorized to edit this product");
+        }
+
+        product.setStockQuantity(0);
+        return productRepository.save(product);
+    }
+
+    public Product toggleServiceOffering(Integer productId, String email) throws Exception {
+        Student merchant = studentRepository.findByBabcockEmail(email)
+                .orElseThrow(() -> new Exception("Merchant not found"));
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new Exception("Product not found"));
+
+        if (!product.getMerchantId().equals(merchant.getId())) {
+            throw new Exception("Unauthorized to edit this product");
+        }
+
+        if ("SERVICE".equalsIgnoreCase(product.getListingType())) {
+            // If it's currently 0 or null (Not Offering), set it to 1 (Offering)
+            if (product.getStockQuantity() == null || product.getStockQuantity() <= 0) {
+                product.setStockQuantity(1);
+            } else {
+                // If it's > 0 (Offering), set it to 0 (Not Offering)
+                product.setStockQuantity(0);
+            }
+        }
+        return productRepository.save(product);
+    }
+
     // GET METHODS
     public List<Product> getMerchantProducts(String email) throws Exception {
         Student merchant = studentRepository.findByBabcockEmail(email)

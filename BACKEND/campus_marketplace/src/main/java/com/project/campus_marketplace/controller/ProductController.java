@@ -96,4 +96,34 @@ public class ProductController {
         // ENFORCED: This will no longer return disabled items or items from vacationing shops
         return ResponseEntity.ok(productService.getPublicMarketplaceProducts());
     }
+
+    // PUT /api/products/{id}/toggle-status
+    @PutMapping("/{id}/toggle-status")
+    public ResponseEntity<?> toggleProductStatus(@PathVariable Integer id, @RequestParam("email") String email) {
+        try {
+            return ResponseEntity.ok(productService.toggleProductStatus(id, email));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error toggling status: " + e.getMessage());
+        }
+    }
+
+    // PUT /api/products/{id}/mark-out-of-stock
+    @PutMapping("/{id}/mark-out-of-stock")
+    public ResponseEntity<?> markOutOfStock(@PathVariable Integer id, @RequestParam("email") String email) {
+        try {
+            return ResponseEntity.ok(productService.markOutOfStock(id, email));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error updating stock: " + e.getMessage());
+        }
+    }
+
+    // PUT /api/products/{id}/toggle-offering
+    @PutMapping("/{id}/toggle-offering")
+    public ResponseEntity<?> toggleServiceOffering(@PathVariable Integer id, @RequestParam("email") String email) {
+        try {
+            return ResponseEntity.ok(productService.toggleServiceOffering(id, email));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error toggling offering: " + e.getMessage());
+        }
+    }
 }

@@ -58,7 +58,9 @@ public class OrderController {
                 if ("DISABLED".equalsIgnoreCase(p.getStatus())) {
                     return ResponseEntity.badRequest().body("Cannot accept offer. This listing is currently disabled.");
                 }
-                if ("ITEM".equalsIgnoreCase(p.getListingType()) && (p.getStockQuantity() == null || p.getStockQuantity() <= 0)) {
+                // Block if OUT OF STOCK or NOT OFFERING
+                if (p.getStockQuantity() == null || p.getStockQuantity() <= 0) {
+                    String errorType = "SERVICE".equalsIgnoreCase(p.getListingType()) ? "NOT OFFERING" : "OUT OF STOCK";
                     return ResponseEntity.badRequest().body("Cannot accept offer. This item is out of stock.");
                 }
             }
