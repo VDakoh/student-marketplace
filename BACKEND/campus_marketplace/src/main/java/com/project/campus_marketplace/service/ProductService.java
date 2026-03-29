@@ -30,6 +30,24 @@ public class ProductService {
     @Autowired
     private MerchantProfileRepository merchantProfileRepository;
 
+    private static final List<String> BANNED_KEYWORDS = List.of(
+            "weapon", "gun", "knife", "drugs", "weed", "vape", "exam answers", "fake id", "stolen", "hack", "porn", "sex", "Kush", "gay"
+    );
+
+    private void validateContentAgainstPolicies(String... fields) throws Exception {
+        for (String field : fields) {
+            if (field == null || field.trim().isEmpty()) continue;
+
+            String lowerField = field.toLowerCase();
+            for (String keyword : BANNED_KEYWORDS) {
+                if (lowerField.contains(keyword)) {
+                    // Instantly reject the listing entirely
+                    throw new Exception("Listing rejected: Contains prohibited content related to university platform policies (" + keyword + ").");
+                }
+            }
+        }
+    }
+
     // 1. ADD NEW PRODUCT (Multi-Image Support & SKU Generation)
     public Product addProduct(String email, String title, String description, BigDecimal price,
                               String listingType, String subType, String category, String customCategory,
@@ -37,6 +55,8 @@ public class ProductService {
 
         Student merchant = studentRepository.findByBabcockEmail(email)
                 .orElseThrow(() -> new Exception("Merchant not found"));
+
+        validateContentAgainstPolicies(title, description, customCategory);
 
         Product product = new Product();
         product.setMerchantId(merchant.getId());
@@ -105,6 +125,8 @@ public class ProductService {
         if (!product.getMerchantId().equals(merchant.getId())) {
             throw new Exception("Unauthorized to edit this product");
         }
+
+        validateContentAgainstPolicies(title, description, customCategory);
 
         // Update Fields
         product.setTitle(title);
