@@ -124,10 +124,10 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!newKeyword.trim()) return;
     try {
-      const res = await axios.post('http://localhost:8081/api/admin/keywords', { word: newKeyword }, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
+      await axios.post('http://localhost:8081/api/admin/keywords', { word: newKeyword }, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
       setNewKeyword('');
       fetchKeywords();
-      setMessage(res.data.message || "Keyword(s) added to blocklist.");
+      setMessage("Keyword added to blocklist.");
     } catch (error) {
       alert(error.response?.data || "Failed to add keyword.");
     }
@@ -653,12 +653,12 @@ export default function AdminDashboard() {
                 <input 
                   type="text" 
                   className="admin-filter-input" 
-                  placeholder="Type banned words separated by commas (e.g., weapon, fake id, drugs)" 
+                  placeholder="Type a banned word (e.g., weapon, fake id)" 
                   value={newKeyword} 
                   onChange={(e) => setNewKeyword(e.target.value)}
                   style={{ flexGrow: 1 }}
                 />
-                <button type="submit" className="btn-approve">Add Words</button>
+                <button type="submit" className="btn-approve">Add Word</button>
               </form>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: '100px' }}>
