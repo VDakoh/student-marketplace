@@ -57,12 +57,13 @@ public class ProductController {
             @RequestParam(value = "customCategory", required = false) String customCategory,
             @RequestParam(value = "itemCondition", required = false) String itemCondition,
             @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
-            @RequestParam(value = "images", required = false) List<MultipartFile> images) {
+            @RequestParam(value = "images", required = false) List<MultipartFile> images,
+            @RequestParam(value = "keptImages", required = false) List<String> keptImages) { // <-- ADD THIS PARAMETER
 
         try {
             Product updatedProduct = productService.updateProduct(
                     id, email, title, description, price, listingType, subType, category,
-                    customCategory, itemCondition, stockQuantity, images);
+                    customCategory, itemCondition, stockQuantity, images, keptImages); // <-- PASS IT HERE
             return ResponseEntity.ok(updatedProduct);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error updating product: " + e.getMessage());

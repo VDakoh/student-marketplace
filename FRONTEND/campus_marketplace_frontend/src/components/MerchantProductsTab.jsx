@@ -102,7 +102,8 @@ export default function MerchantProductsTab({ email }) {
     const loadedImages = existingImages.map((path, idx) => ({
       id: `existing-${idx}-${Date.now()}`,
       file: null, 
-      previewUrl: getImageUrl(path)
+      previewUrl: getImageUrl(path),
+      originalPath: path // <-- ADD THIS LINE
     }));
     
     setImages(loadedImages);
@@ -313,7 +314,9 @@ export default function MerchantProductsTab({ email }) {
     
     images.forEach((img) => {
       if (img.file) {
-        data.append('images', img.file); 
+        data.append('images', img.file); // Send new files
+      } else if (img.originalPath) {
+        data.append('keptImages', img.originalPath); // Send retained existing paths
       }
     });
 

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -120,51 +121,82 @@ public class ProductService {
     }
 
     // 2. EDIT EXISTING PRODUCT
-    public Product updateProduct(Integer productId, String email, String title, String description, BigDecimal price,
+    // 2. UPDATE EXISTING PRODUCT (With Image Deletion Logic)
+    public Product updateProduct(Integer id, String email, String title, String description, BigDecimal price,
                                  String listingType, String subType, String category, String customCategory,
-                                 String itemCondition, Integer stockQuantity, List<MultipartFile> newImages) throws Exception {
+                                 String itemCondition, Integer stockQuantity, List<MultipartFile> newImages,
+                                 List<String> keptImages) throws Exception { // <-- Add keptImages to signature
 
         Student merchant = studentRepository.findByBabcockEmail(email)
                 .orElseThrow(() -> new Exception("Merchant not found"));
 
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new Exception("Product not found"));
 
-        // Security Check: Only the owner can edit this product
         if (!product.getMerchantId().equals(merchant.getId())) {
             throw new Exception("Unauthorized to edit this product");
         }
 
+        // STEP 7.8 AUTO-MODERATOR INJECTION
         validateContentAgainstPolicies(title, description, customCategory);
 
-        // Update Fields
         product.setTitle(title);
         product.setDescription(description);
         product.setPrice(price);
         product.setListingType(listingType);
         product.setSubType(subType);
         product.setCategory(category);
-        product.setCustomCategory(customCategory);
-        product.setItemCondition(itemCondition);
-        product.setStockQuantity(stockQuantity);
+        product.setCustomCategory("Other...".equals(category) ? customCategory : null);
 
-        // Append new images if provided
-        if (newImages != null && !newImages.isEmpty()) {
-            String uploadDir = "uploads/products/";
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+        if ("ITEM".equalsIgnoreCase(listingType)) {
+            product.setItemCondition(itemCondition);
+            product.setStockQuantity(stockQuantity);
+        } else {
+            product.setItemCondition(null);
+            product.setStockQuantity(stockQuantity <= 0 ? 0 : 1);
+        }
 
-            List<String> currentPaths = product.getImagePaths();
-            for (MultipartFile img : newImages) {
-                if (!img.isEmpty()) {
-                    String fileName = UUID.randomUUID().toString() + "_" + img.getOriginalFilename();
-                    Path filePath = uploadPath.resolve(fileName);
-                    Files.copy(img.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-                    currentPaths.add(uploadDir + fileName);
+        // --- IMAGE RECONCILIATION LOGIC ---
+        List<String> currentPaths = product.getImagePaths() != null ? product.getImagePaths() : new ArrayList<>();
+        List<String> updatedPaths = new ArrayList<>();
+
+        // 1. Process existing images (Keep or physically delete)
+        if (keptImages != null && !keptImages.isEmpty()) {
+            for (String path : currentPaths) {
+                if (keptImages.contains(path)) {
+                    updatedPaths.add(path); // Keep it
+                } else {
+                    // Delete removed file from server to save space
+                    try { Files.deleteIfExists(Paths.get(path)); }
+                    catch (Exception e) { System.out.println("Could not delete image: " + path); }
                 }
             }
-            product.setImagePaths(currentPaths);
+        } else {
+            // If keptImages is null, the user deleted ALL old images
+            for (String path : currentPaths) {
+                try { Files.deleteIfExists(Paths.get(path)); }
+                catch (Exception e) { System.out.println("Could not delete image: " + path); }
+            }
         }
+
+        // 2. Upload and append entirely new images
+        if (newImages != null && !newImages.isEmpty()) {
+            String uploadDir = "uploads/products/";
+            File dir = new File(uploadDir);
+            if (!dir.exists()) dir.mkdirs();
+
+            for (MultipartFile file : newImages) {
+                if (!file.isEmpty()) {
+                    String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+                    Path filePath = Paths.get(uploadDir + fileName);
+                    Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    updatedPaths.add(uploadDir + fileName);
+                }
+            }
+        }
+
+        // 3. Save new paths back to entity
+        product.setImagePaths(updatedPaths);
 
         return productRepository.save(product);
     }
