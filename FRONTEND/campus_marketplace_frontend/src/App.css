@@ -6150,9 +6150,10 @@ textarea.profile-input {
   margin-bottom: 25px;
 }
 
-/* =========================================
+
+/* =================
    MEDIA QUERIES
-========================================= */
+====================*/
 
 @media (max-width: 768px) {
   .merchant-products-wrapper {
@@ -6216,13 +6217,156 @@ textarea.profile-input {
   }
 }
 
-
-
-
 /* =========================================
    MERCHANT PRODUCTS INVENTORY UI FIXES ENDS
 ========================================= */
 
+
+
+/* =========================================
+   REPORT LISTING UI (Product Detail)
+========================================= */
+
+.report-listing-container {
+  margin-top: 25px;
+  text-align: center;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 15px;
+}
+
+.btn-report-listing {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.btn-report-listing:hover {
+  color: #ef4444;
+  background-color: #fef2f2;
+}
+
+/* --- Report Modal Styling --- */
+.report-modal-card {
+  width: 90%;
+  max-width: 450px;
+  padding: 30px;
+}
+
+.report-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.report-modal-title {
+  margin: 0;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+}
+
+.report-modal-desc {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 25px;
+  line-height: 1.6;
+}
+
+.report-form-group {
+  margin-bottom: 20px;
+  text-align: left; /* Ensure labels align left */
+}
+
+/* Fix for the Squished Select Dropdown */
+.report-select-input {
+  width: 100%;
+  height: 50px !important; /* Force strict height */
+  padding: 0 40px 0 15px; /* Leave room for the arrow on the right */
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #334155;
+  background-color: #f8fafc;
+  cursor: pointer;
+  box-sizing: border-box;
+  
+  /* Strip native Apple/Windows styling so our height applies */
+  appearance: none; 
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  
+  /* Custom clean SVG arrow to replace the native one */
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 16px;
+  
+  transition: all 0.2s ease;
+}
+
+.report-select-input:focus {
+  outline: none;
+  border-color: #ef4444;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.report-textarea-input {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #334155;
+  background-color: #f8fafc;
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.report-textarea-input:focus {
+  outline: none;
+  border-color: #ef4444;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.report-modal-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.report-modal-actions .btn-discard {
+  flex: 1;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.report-modal-actions .btn-reject {
+  flex: 1;
+  padding: 12px;
+}
+
+
+/* =========================================
+   REPORT LISTING UI (Product Detail)
+========================================= */
 
 
 

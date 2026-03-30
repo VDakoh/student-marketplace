@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import { FiChevronLeft, FiChevronRight, FiTag, FiInfo, FiBox, FiMessageCircle, FiArrowLeft, FiImage, FiChevronRight as FiArrowRight, FiX, FiBookmark, FiAlertCircle } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiTag, FiInfo, FiBox, FiMessageCircle, FiArrowLeft, FiImage, FiChevronRight as FiArrowRight, FiX, FiBookmark, FiAlertCircle, FiFlag } from 'react-icons/fi';
 import { FaStore, FaBookmark } from 'react-icons/fa';
 import Navbar from './Navbar';
 import '../App.css';
@@ -23,20 +23,24 @@ export default function ProductDetail() {
 
     const [loading, setLoading] = useState(true);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-    // --- GALLERY UI STATES ---
+    
+    // --- UI STATES ---
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-
-    // --- SAVED ITEMS LOGIC ---
     const [isSaved, setIsSaved] = useState(false);
     const [saveLoading, setSaveLoading] = useState(false);
+
+    // --- STEP 7.8: REPORTING STATES ---
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportType, setReportType] = useState('PROHIBITED_ITEM');
+    const [reportReason, setReportReason] = useState('');
+    const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
     let currentUserId = null;
     const token = localStorage.getItem('jwtToken');
     if (token) {
         try {
             const decoded = jwtDecode(token);
-            currentUserId = decoded.id || decoded.studentId || decoded.userId;
+            currentUserId = decoded.id || decoded.studentId || decoded.userId; 
         } catch (err) { console.error("Invalid token"); }
     }
 
@@ -47,19 +51,17 @@ export default function ProductDetail() {
             try {
                 setLoading(true);
                 const res = await axios.get('http://localhost:8081/api/products');
-
-                // STEP 7.5 FIX: Find the requested product FIRST, even if it is DISABLED
+                
                 const foundProduct = res.data.find(p => p.sku === id || p.id.toString() === id);
                 setProduct(foundProduct);
 
-                // Filter ACTIVE products only for the "More from..." sections below
                 const activeProducts = res.data.filter(p => p.status === 'ACTIVE');
                 setAllProducts(activeProducts);
 
-                if (currentUserId && foundProduct && token) {
+                if (currentUserId && foundProduct && token) { 
                     try {
                         const savedRes = await axios.get(`http://localhost:8081/api/saved-items/${currentUserId}`, {
-                            headers: { Authorization: `Bearer ${token}` }
+                            headers: { Authorization: `Bearer ${token}` } 
                         });
                         const alreadySaved = savedRes.data.some(item => item.productId === foundProduct.id);
                         setIsSaved(alreadySaved);
@@ -81,7 +83,7 @@ export default function ProductDetail() {
             }
         };
         fetchData();
-    }, [id, currentUserId]);
+    }, [id, currentUserId]); 
 
     const imagesList = product?.imagePaths && product.imagePaths.length > 0 ? product.imagePaths : (product?.imagePath ? [product.imagePath] : []);
 
@@ -115,9 +117,9 @@ export default function ProductDetail() {
                 studentId: currentUserId,
                 productId: product.id
             }, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` } 
             });
-            setIsSaved(res.data.saved);
+            setIsSaved(res.data.saved); 
         } catch (error) {
             console.error("Failed to toggle saved item", error);
             if (error.response && error.response.status === 403) {
@@ -129,21 +131,20 @@ export default function ProductDetail() {
         }
     };
 
-    // --- THE INQUIRY FLOW ---
     const handleMessageMerchant = () => {
         if (!currentUserId || !token) {
             alert("Please log in to message the merchant.");
             navigate('/login');
             return;
         }
-
+        
         if (currentUserId === product.merchantId) {
             alert("You cannot message yourself. This is your own product!");
             return;
         }
 
         const inquiryMsg = `Hello ${merchantProfile?.merchantName || 'there'}, I saw your listing for "${product.title}" and would like to make an inquiry. Is it still available?`;
-
+        
         navigate('/profile?tab=inbox', {
             state: {
                 startChatWith: product.merchantId,
@@ -152,6 +153,41 @@ export default function ProductDetail() {
                 prefillMessage: inquiryMsg
             }
         });
+    };
+
+    // --- STEP 7.8: SUBMIT REPORT ---
+    const handleSubmitReport = async (e) => {
+        e.preventDefault();
+        if (!currentUserId || !token) {
+            alert("Please log in to report a listing.");
+            navigate('/login');
+            return;
+        }
+        if (!reportReason.trim()) {
+            alert("Please provide a reason for your report.");
+            return;
+        }
+
+        try {
+            setIsSubmittingReport(true);
+            await axios.post('http://localhost:8081/api/reports/submit', {
+                reporterId: currentUserId,
+                reportedProductId: product.id,
+                type: reportType,
+                reason: reportReason
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            alert("Report submitted successfully. Admin will review this listing.");
+            setShowReportModal(false);
+            setReportReason('');
+        } catch (error) {
+            console.error("Failed to submit report:", error);
+            alert("Failed to submit report. Please try again.");
+        } finally {
+            setIsSubmittingReport(false);
+        }
     };
 
     useEffect(() => {
@@ -177,7 +213,6 @@ export default function ProductDetail() {
         </div>
     );
 
-    // STEP 7.5: Status & Stock Variables
     const isOutOfStock = product.stockQuantity <= 0;
     const isDisabled = product.status === 'DISABLED';
     const isInteractionLocked = isOutOfStock || isDisabled;
@@ -212,8 +247,7 @@ export default function ProductDetail() {
             <Navbar />
 
             <div className="product-page-layout animation-fade-in" style={{ position: 'relative' }}>
-
-                {/* STEP 7.5 FIX: Disabled Overlay */}
+                
                 {isDisabled && (
                     <div className="shop-inactive-overlay animation-fade-in" style={{ zIndex: 50, borderRadius: '12px' }}>
                         <div className="merchant-status-banner massive-banner" style={{ backgroundColor: '#ef4444' }}>
@@ -235,7 +269,7 @@ export default function ProductDetail() {
                         <div className="product-detail-card">
                             <div className="product-image-section">
                                 <div className="main-image-wrapper" style={{ position: 'relative' }}>
-                                    {/* STEP 7.5 FIX: Out of Stock / Not Offering Visual Badge */}
+                                    
                                     {isOutOfStock && !isDisabled && (
                                         <div style={{ position: 'absolute', top: '15px', right: '15px', backgroundColor: '#ef4444', color: 'white', padding: '6px 14px', borderRadius: '20px', fontWeight: 'bold', fontSize: '14px', zIndex: 10, boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
                                             {product.listingType === 'SERVICE' ? 'NOT OFFERING' : 'OUT OF STOCK'}
@@ -244,10 +278,10 @@ export default function ProductDetail() {
 
                                     {imagesList.length > 0 ? (
                                         <>
-                                            <img
-                                                src={getImageUrl(imagesList[currentImageIndex])}
-                                                alt={product.title}
-                                                className="main-image"
+                                            <img 
+                                                src={getImageUrl(imagesList[currentImageIndex])} 
+                                                alt={product.title} 
+                                                className="main-image" 
                                                 onClick={() => openGallery(currentImageIndex)}
                                                 style={{ cursor: 'pointer', filter: isOutOfStock ? 'grayscale(100%) opacity(70%)' : 'none' }}
                                             />
@@ -279,12 +313,12 @@ export default function ProductDetail() {
                                         <h1 className="product-title" style={{ color: isOutOfStock ? '#64748b' : '#1e293b' }}>
                                             {product.title}
                                         </h1>
-
-                                        <button
-                                            onClick={handleToggleSave}
+                                        
+                                        <button 
+                                            onClick={handleToggleSave} 
                                             disabled={saveLoading}
                                             style={{
-                                                background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px',
+                                                background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', 
                                                 padding: '10px 15px', display: 'flex', alignItems: 'center', gap: '8px',
                                                 cursor: 'pointer', color: isSaved ? '#16a34a' : '#64748b',
                                                 fontWeight: '600', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
@@ -315,26 +349,38 @@ export default function ProductDetail() {
                                     </div>
                                 </div>
 
-                                {/* STEP 7.5 FIX: Message Button Lockdown */}
                                 <div className="product-actions-box">
-                                    <button
-                                        className="btn-contact-merchant"
+                                    <button 
+                                        className="btn-contact-merchant" 
                                         onClick={handleMessageMerchant}
                                         disabled={isInteractionLocked}
-                                        style={{
+                                        style={{ 
                                             backgroundColor: isInteractionLocked ? '#cbd5e1' : 'var(--color-primary)',
                                             cursor: isInteractionLocked ? 'not-allowed' : 'pointer',
                                             color: isInteractionLocked ? '#64748b' : 'white'
                                         }}
                                     >
-                                        <FiMessageCircle size={22} />
-                                        {isDisabled ? 'Listing Unavailable' :
-                                            isOutOfStock ? (product.listingType === 'SERVICE' ? 'Service Currently Unavailable' : 'Item is Out of Stock') :
-                                                'Message Merchant'}
+                                        <FiMessageCircle size={22} /> 
+                                        {isDisabled ? 'Listing Unavailable' : 
+                                         isOutOfStock ? (product.listingType === 'SERVICE' ? 'Service Currently Unavailable' : 'Item is Out of Stock') : 
+                                         'Message Merchant'}
                                     </button>
                                     <p className="action-hint">
                                         {isInteractionLocked ? 'Inquiries are currently disabled for this item.' : 'Negotiate prices and arrange delivery directly through your inbox.'}
                                     </p>
+
+                                    {/* STEP 7.8: CLEAN REPORT BUTTON */}
+                                    <div className="report-listing-container">
+                                        <button 
+                                            className="btn-report-listing"
+                                            onClick={() => {
+                                                if (!currentUserId) { alert("Please log in to report items."); navigate('/login'); return; }
+                                                setShowReportModal(true);
+                                            }}
+                                        >
+                                            <FiFlag size={16} /> Report this listing
+                                        </button>
+                                    </div>
                                 </div>
 
                             </div>
@@ -443,37 +489,68 @@ export default function ProductDetail() {
                 </div>
             </div>
 
+            {/* STEP 7.8: THE CLEAN REPORT MODAL */}
+            {showReportModal && (
+                <div className="modal-overlay" style={{ zIndex: 9999 }}>
+                    <div className="modal-card report-modal-card">
+                        <div className="report-modal-header">
+                            <h3 className="report-modal-title">
+                                <FiFlag color="#ef4444" /> Report Listing
+                            </h3>
+                            <button className="modal-close-btn" onClick={() => setShowReportModal(false)}>
+                                <FiX size={24} />
+                            </button>
+                        </div>
+                        
+                        <p className="report-modal-desc">
+                            If you believe this listing violates the Babcock Marketplace guidelines, please report it to the admins.
+                        </p>
+
+                        <form onSubmit={handleSubmitReport}>
+                            <div className="report-form-group">
+                                <label className="profile-label">Reason for Reporting</label>
+                                <select 
+                                    className="report-select-input" 
+                                    value={reportType} 
+                                    onChange={(e) => setReportType(e.target.value)}
+                                >
+                                    <option value="PROHIBITED_ITEM">Prohibited Item (Weapons, Drugs, etc.)</option>
+                                    <option value="SCAM_FRAUD">Suspected Scam or Fraud</option>
+                                    <option value="OFFENSIVE_CONTENT">Offensive or Inappropriate Content</option>
+                                    <option value="STOLEN_GOODS">Suspected Stolen Goods</option>
+                                    <option value="OTHER">Other Policy Violation</option>
+                                </select>
+                            </div>
+
+                            <div className="report-form-group">
+                                <label className="profile-label">Additional Details</label>
+                                <textarea 
+                                    className="report-textarea-input" 
+                                    placeholder="Please provide details to help admins investigate..."
+                                    value={reportReason}
+                                    onChange={(e) => setReportReason(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="report-modal-actions">
+                                <button type="button" className="btn-discard" onClick={() => setShowReportModal(false)}>Cancel</button>
+                                <button type="submit" className="btn-reject" disabled={isSubmittingReport}>
+                                    {isSubmittingReport ? "Submitting..." : "Submit Report"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {isGalleryOpen && imagesList.length > 0 && (
                 <div className="gallery-overlay" onClick={closeGallery}>
-
-                    <button className="gallery-close" onClick={closeGallery}>
-                        <FiX size={32} />
-                    </button>
-
-                    {imagesList.length > 1 && (
-                        <button className="gallery-nav left" onClick={prevImage}>
-                            <FiChevronLeft size={40} />
-                        </button>
-                    )}
-
-                    <img
-                        src={getImageUrl(imagesList[currentImageIndex])}
-                        alt={`Expanded view ${currentImageIndex + 1}`}
-                        className="gallery-expanded-img"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-
-                    {imagesList.length > 1 && (
-                        <button className="gallery-nav right" onClick={nextImage}>
-                            <FiChevronRight size={40} />
-                        </button>
-                    )}
-
-                    {imagesList.length > 1 && (
-                        <div className="gallery-counter">
-                            {currentImageIndex + 1} / {imagesList.length}
-                        </div>
-                    )}
+                <button className="gallery-close" onClick={closeGallery}><FiX size={32} /></button>
+                {imagesList.length > 1 && (<button className="gallery-nav left" onClick={prevImage}><FiChevronLeft size={40} /></button>)}
+                <img src={getImageUrl(imagesList[currentImageIndex])} alt="Expanded view" className="gallery-expanded-img" onClick={(e) => e.stopPropagation()} />
+                {imagesList.length > 1 && (<button className="gallery-nav right" onClick={nextImage}><FiChevronRight size={40} /></button>)}
+                <div className="gallery-counter">{currentImageIndex + 1} / {imagesList.length}</div>
                 </div>
             )}
         </div>

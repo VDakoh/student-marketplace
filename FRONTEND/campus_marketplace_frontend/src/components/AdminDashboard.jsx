@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   FiUsers, FiFileText, FiLogOut, FiGrid, FiSettings, FiActivity, FiSearch, 
-  FiShield, FiTrash2, FiSlash, FiCheckCircle, FiUser, FiImage, FiMapPin, FiPhone, FiMail, FiMessageSquare, FiClock, FiXCircle, FiEye
+  FiShield, FiTrash2, FiSlash, FiCheckCircle, FiUser, FiImage, FiMapPin, FiPhone, FiMail, FiMessageSquare, FiClock, FiXCircle, FiEye, FiFlag
 } from 'react-icons/fi';
 import { FaStore } from 'react-icons/fa';
 import '../App.css';
@@ -23,6 +23,11 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [appeals, setAppeals] = useState([]);
+  const [reports, setReports] = useState([]); // NEW: Reports State
+
+  // --- SETTINGS STATES ---
+  const [keywords, setKeywords] = useState([]);
+  const [newKeyword, setNewKeyword] = useState('');
 
   // --- FILTER STATES (For Users) ---
   const [userSearch, setUserSearch] = useState('');
@@ -39,7 +44,8 @@ export default function AdminDashboard() {
   // --- INTERACTIVE ROW MODAL STATES ---
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedAppeal, setSelectedAppeal] = useState(null); // NEW: Appeal Modal State
+  const [selectedAppeal, setSelectedAppeal] = useState(null); 
+  const [selectedReport, setSelectedReport] = useState(null); // NEW: Report Modal State
   const [viewingMerchantView, setViewingMerchantView] = useState(false);
   const [userMerchantProfile, setUserMerchantProfile] = useState(null);
   const [fetchingProfile, setFetchingProfile] = useState(false);
@@ -48,10 +54,6 @@ export default function AdminDashboard() {
   const [suspendingUser, setSuspendingUser] = useState(null);
   const [suspendReasonType, setSuspendReasonType] = useState('');
   const [suspendReasonText, setSuspendReasonText] = useState('');
-
-  // --- SETTINGS STATES ---
-  const [keywords, setKeywords] = useState([]);
-  const [newKeyword, setNewKeyword] = useState('');
 
   const getFileUrl = (path) => path ? `http://localhost:8081/${path.replace(/\\/g, '/')}` : null;
 
@@ -65,6 +67,10 @@ export default function AdminDashboard() {
     if (mainTab === 'USERS') fetchUsers();
     if (mainTab === 'LISTINGS') fetchProducts();
     if (mainTab === 'SETTINGS') fetchKeywords();
+    if (mainTab === 'REPORTS') {
+      fetchReports();
+      if (products.length === 0) fetchProducts(); // Need products to cross-reference reports
+    }
     if (mainTab === 'APPEALS') {
       fetchAppeals();
       if (users.length === 0) fetchUsers(); 
@@ -120,26 +126,13 @@ export default function AdminDashboard() {
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
-  const handleAddKeyword = async (e) => {
-    e.preventDefault();
-    if (!newKeyword.trim()) return;
+  // NEW: Fetch Reports
+  const fetchReports = async () => {
+    setLoading(true);
     try {
-      await axios.post('http://localhost:8081/api/admin/keywords', { word: newKeyword }, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
-      setNewKeyword('');
-      fetchKeywords();
-      setMessage("Keyword added to blocklist.");
-    } catch (error) {
-      alert(error.response?.data || "Failed to add keyword.");
-    }
-  };
-
-  const handleDeleteKeyword = async (id) => {
-    try {
-      await axios.delete(`http://localhost:8081/api/admin/keywords/${id}`, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
-      fetchKeywords();
-    } catch (error) {
-      alert("Failed to delete keyword.");
-    }
+      const res = await axios.get('http://localhost:8081/api/reports', { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
+      setReports(res.data);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
   // --- ADMIN ACTIONS ---
@@ -203,6 +196,17 @@ export default function AdminDashboard() {
     } catch (error) { setMessage("Failed to resolve appeal."); }
   };
 
+  // NEW: Resolve Report Ticket
+  const resolveReport = async (reportId, status) => {
+    if (!window.confirm(`Mark this report as ${status}?`)) return;
+    try {
+      const res = await axios.put(`http://localhost:8081/api/reports/${reportId}/status`, { status }, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
+      setMessage(res.data.message || `Report marked as ${status}.`);
+      fetchReports();
+      setSelectedReport(null);
+    } catch (error) { setMessage("Failed to update report status."); }
+  };
+
   const deleteProduct = async (productId) => {
     if (!window.confirm("Are you sure you want to permanently delete this listing?")) return;
     try {
@@ -239,6 +243,28 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleAddKeyword = async (e) => {
+    e.preventDefault();
+    if (!newKeyword.trim()) return;
+    try {
+      const res = await axios.post('http://localhost:8081/api/admin/keywords', { word: newKeyword }, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
+      setNewKeyword('');
+      fetchKeywords();
+      setMessage(res.data.message || "Keyword(s) added to blocklist.");
+    } catch (error) {
+      alert(error.response?.data || "Failed to add keyword.");
+    }
+  };
+
+  const handleDeleteKeyword = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8081/api/admin/keywords/${id}`, { headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` } });
+      fetchKeywords();
+    } catch (error) {
+      alert("Failed to delete keyword.");
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('jwtToken');
     navigate('/login');
@@ -257,7 +283,6 @@ export default function AdminDashboard() {
     return user ? `${user.fullName} (${user.babcockEmail})` : `Unknown User (ID: ${id})`;
   };
 
-  // Helper to get full user object for the appeal modal
   const appealUserObj = selectedAppeal ? users.find(u => u.id === selectedAppeal.studentId) : null;
 
   return (
@@ -292,6 +317,11 @@ export default function AdminDashboard() {
 
           <div className={`admin-nav-item ${mainTab === 'APPEALS' ? 'active' : ''}`} onClick={() => setMainTab('APPEALS')}>
             <FiMessageSquare size={18} /> Appeals Management
+          </div>
+
+          {/* NEW TAB: REPORTS & DISPUTES */}
+          <div className={`admin-nav-item ${mainTab === 'REPORTS' ? 'active' : ''}`} onClick={() => setMainTab('REPORTS')}>
+            <FiFlag size={18} /> Reports & Disputes
           </div>
           
           <div className={`admin-nav-item ${mainTab === 'LISTINGS' ? 'active' : ''}`} onClick={() => setMainTab('LISTINGS')}>
@@ -548,7 +578,6 @@ export default function AdminDashboard() {
                           <strong style={{ color: '#1e293b' }}>{getStudentInfo(appeal.studentId)}</strong>
                         </td>
 
-                        {/* We use JS to physically cut the string, bypassing the CSS browser bug entirely */}
                         <td style={{ width: '280px', maxWidth: '280px' }}>
                           <div className="appeal-text-truncate">
                             {appeal.reason.length > 29 ? `${appeal.reason.substring(0, 29)}...` : appeal.reason}
@@ -578,6 +607,55 @@ export default function AdminDashboard() {
                           ) : (
                             <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold' }}>RESOLVED</span>
                           )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* --- TAB 7: REPORTS & DISPUTES --- */}
+        {mainTab === 'REPORTS' && (
+          <div className="animation-fade-in">
+             <div className="admin-header-revamp">
+              <h2>Reports & <span>Disputes</span></h2>
+              <p>Review user-flagged listings and enforce marketplace guidelines.</p>
+            </div>
+            
+            {loading ? <p className="loading-text">Loading reports...</p> : reports.length === 0 ? (
+              <div className="empty-state admin-empty">No reports to review.</div>
+            ) : (
+              <div className="admin-table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Violation Type</th>
+                      <th>Reported Product ID</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reports.map((report) => (
+                      <tr key={report.id} className="clickable-row" onClick={() => setSelectedReport(report)}>
+                        <td style={{ whiteSpace: 'nowrap', fontSize: '13px', color: '#64748b' }}>
+                          {new Date(report.createdAt).toLocaleDateString()}
+                        </td>
+                        <td>
+                          <strong style={{ color: '#ef4444' }}>{report.type.replace('_', ' ')}</strong>
+                        </td>
+                        <td>
+                          <span style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
+                            Item #{report.reportedProductId}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge ${report.status.toLowerCase()}`}>
+                            {report.status}
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -653,12 +731,12 @@ export default function AdminDashboard() {
                 <input 
                   type="text" 
                   className="admin-filter-input" 
-                  placeholder="Type a banned word (e.g., weapon, fake id)" 
+                  placeholder="Type banned words separated by commas (e.g., weapon, fake id, drugs)" 
                   value={newKeyword} 
                   onChange={(e) => setNewKeyword(e.target.value)}
                   style={{ flexGrow: 1 }}
                 />
-                <button type="submit" className="btn-approve">Add Word</button>
+                <button type="submit" className="btn-approve">Add Words</button>
               </form>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: '100px' }}>
@@ -674,6 +752,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
       </div>
 
       {/* =========================================
@@ -690,7 +769,6 @@ export default function AdminDashboard() {
             </div>
             
             <div className="modal-card-body p-0">
-              {/* STUDENT VIEW */}
               {!viewingMerchantView ? (
                 <div className="admin-user-profile-view animation-fade-in">
                   <div className="user-avatar-large">
@@ -716,7 +794,6 @@ export default function AdminDashboard() {
                   )}
                 </div>
               ) : (
-                /* MERCHANT VIEW */
                 <div className="admin-merchant-profile-view animation-fade-in">
                   <div className="merchant-mini-banner" style={{ backgroundImage: `url(${getFileUrl(userMerchantProfile?.bannerPath) || ''})` }}>
                     <button className="back-to-user-btn" onClick={() => setViewingMerchantView(false)}>&larr; Back to User</button>
@@ -748,6 +825,68 @@ export default function AdminDashboard() {
                 <button className="btn-approve full-width-btn" onClick={() => reactivateUser(selectedUser.id)}>Reactivate Account</button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- SELECTED REPORT MODAL --- */}
+      {selectedReport && (
+        <div className="modal-overlay" onClick={() => setSelectedReport(null)} style={{zIndex: 9999}}>
+          <div className="modal-card" onClick={e => e.stopPropagation()}>
+            <div className="modal-card-header clean-header">
+              <div className="header-flex">
+                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FiFlag color="#ef4444"/> Report Details
+                </h3>
+                <span className={`badge ${selectedReport.status.toLowerCase()}`}>{selectedReport.status}</span>
+              </div>
+              <button className="modal-close-btn" onClick={() => setSelectedReport(null)}>&times;</button>
+            </div>
+            
+            <div className="modal-card-body">
+              <p><strong>Reporter Student ID:</strong> {selectedReport.reporterId}</p>
+              <p><strong>Violation Type:</strong> <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{selectedReport.type.replace('_', ' ')}</span></p>
+              <p><strong>Submitted On:</strong> {new Date(selectedReport.createdAt).toLocaleString()}</p>
+              
+              <div className="suspension-reason-box" style={{ marginTop: '20px', marginBottom: '20px', padding: '12px', background: '#f8fafc', borderLeft: '4px solid #3b82f6', borderRadius: '0 8px 8px 0' }}>
+                <div className="reason-title" style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '13px', marginBottom: '5px' }}>
+                  User's Explanation
+                </div>
+                <div className="reason-text" style={{ fontSize: '14px', color: '#1e293b', whiteSpace: 'pre-wrap' }}>
+                  {selectedReport.reason}
+                </div>
+              </div>
+
+              {/* Load product context dynamically */}
+              {(() => {
+                  const reportedProd = products.find(p => p.id === selectedReport.reportedProductId);
+                  if (reportedProd) {
+                      return (
+                          <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: '#fdf8f6' }}>
+                              <h4 style={{ margin: '0 0 10px 0', color: '#1e293b' }}>Reported Listing Context</h4>
+                              <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}><strong>Title:</strong> {reportedProd.title}</p>
+                              <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}><strong>Seller ID:</strong> {reportedProd.merchantId}</p>
+                              <button 
+                                className="btn-outline mt-10" 
+                                style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '6px' }}
+                                onClick={() => { setSelectedProduct(reportedProd); setSelectedReport(null); }}
+                              >
+                                  <FiEye /> Inspect Full Listing
+                              </button>
+                          </div>
+                      );
+                  } else {
+                      return <p style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic', marginTop: '20px' }}>Listing #{selectedReport.reportedProductId} data loading or already deleted by merchant...</p>;
+                  }
+              })()}
+            </div>
+
+            {selectedReport.status === 'PENDING' && (
+              <div className="modal-card-actions" style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => resolveReport(selectedReport.id, 'DISMISSED')} className="btn-outline flex-1" style={{ color: '#64748b' }}>Dismiss (False Alarm)</button>
+                <button onClick={() => resolveReport(selectedReport.id, 'RESOLVED')} className="btn-approve flex-1">Mark as Resolved</button>
+              </div>
+            )}
           </div>
         </div>
       )}
