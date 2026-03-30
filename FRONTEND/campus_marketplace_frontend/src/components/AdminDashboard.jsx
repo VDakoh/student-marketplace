@@ -23,7 +23,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [appeals, setAppeals] = useState([]);
-  const [reports, setReports] = useState([]); // NEW: Reports State
+  const [reports, setReports] = useState([]); 
 
   // --- SETTINGS STATES ---
   const [keywords, setKeywords] = useState([]);
@@ -33,6 +33,11 @@ export default function AdminDashboard() {
   const [userSearch, setUserSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [listingFilter, setListingFilter] = useState('ALL');
+
+  // --- FILTER STATES (For Products) ---
+  const [productSearch, setProductSearch] = useState('');
+  const [productStatusFilter, setProductStatusFilter] = useState('ALL');
+  const [productTypeFilter, setProductTypeFilter] = useState('ALL');
 
   // --- MODAL STATES ---
   const [selectedApp, setSelectedApp] = useState(null);
@@ -45,7 +50,7 @@ export default function AdminDashboard() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedAppeal, setSelectedAppeal] = useState(null); 
-  const [selectedReport, setSelectedReport] = useState(null); // NEW: Report Modal State
+  const [selectedReport, setSelectedReport] = useState(null); 
   const [viewingMerchantView, setViewingMerchantView] = useState(false);
   const [userMerchantProfile, setUserMerchantProfile] = useState(null);
   const [fetchingProfile, setFetchingProfile] = useState(false);
@@ -69,7 +74,7 @@ export default function AdminDashboard() {
     if (mainTab === 'SETTINGS') fetchKeywords();
     if (mainTab === 'REPORTS') {
       fetchReports();
-      if (products.length === 0) fetchProducts(); // Need products to cross-reference reports
+      if (products.length === 0) fetchProducts(); 
     }
     if (mainTab === 'APPEALS') {
       fetchAppeals();
@@ -126,7 +131,6 @@ export default function AdminDashboard() {
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
-  // NEW: Fetch Reports
   const fetchReports = async () => {
     setLoading(true);
     try {
@@ -196,7 +200,6 @@ export default function AdminDashboard() {
     } catch (error) { setMessage("Failed to resolve appeal."); }
   };
 
-  // NEW: Resolve Report Ticket
   const resolveReport = async (reportId, status) => {
     if (!window.confirm(`Mark this report as ${status}?`)) return;
     try {
@@ -270,12 +273,19 @@ export default function AdminDashboard() {
     navigate('/login');
   };
 
-  // --- RENDER HELPERS ---
+  // --- RENDER HELPERS & FILTERS ---
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.fullName.toLowerCase().includes(userSearch.toLowerCase()) || user.babcockEmail.toLowerCase().includes(userSearch.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || user.accountStatus === statusFilter;
     const matchesListing = listingFilter === 'ALL' || (listingFilter === 'HAS_LISTINGS' ? user.listingCount > 0 : user.listingCount === 0);
     return matchesSearch && matchesStatus && matchesListing;
+  });
+
+  const filteredProducts = products.filter(prod => {
+    const matchesSearch = prod.title?.toLowerCase().includes(productSearch.toLowerCase()) || prod.sku?.toLowerCase().includes(productSearch.toLowerCase());
+    const matchesStatus = productStatusFilter === 'ALL' || prod.status === productStatusFilter;
+    const matchesType = productTypeFilter === 'ALL' || prod.listingType === productTypeFilter;
+    return matchesSearch && matchesStatus && matchesType;
   });
 
   const getStudentInfo = (id) => {
@@ -319,7 +329,6 @@ export default function AdminDashboard() {
             <FiMessageSquare size={18} /> Appeals Management
           </div>
 
-          {/* NEW TAB: REPORTS & DISPUTES */}
           <div className={`admin-nav-item ${mainTab === 'REPORTS' ? 'active' : ''}`} onClick={() => setMainTab('REPORTS')}>
             <FiFlag size={18} /> Reports & Disputes
           </div>
@@ -673,6 +682,34 @@ export default function AdminDashboard() {
               <h2>Global <span>Listings</span></h2>
               <p>Monitor and moderate all active marketplace products.</p>
             </div>
+
+            {/* --- NEW: LISTING FILTERS --- */}
+            <div className="admin-filters-container">
+              <div className="admin-filter-group">
+                <label className="admin-filter-label">Search Listings</label>
+                <div className="admin-search-wrapper">
+                  <FiSearch className="admin-search-icon" />
+                  <input type="text" className="admin-filter-input search-input" placeholder="Title or SKU..." value={productSearch} onChange={e => setProductSearch(e.target.value)} />
+                </div>
+              </div>
+              <div className="admin-filter-group">
+                <label className="admin-filter-label">Listing Status</label>
+                <select className="admin-filter-input" value={productStatusFilter} onChange={e => setProductStatusFilter(e.target.value)}>
+                  <option value="ALL">All Statuses</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="DISABLED">Hidden / Disabled</option>
+                </select>
+              </div>
+              <div className="admin-filter-group">
+                <label className="admin-filter-label">Listing Type</label>
+                <select className="admin-filter-input" value={productTypeFilter} onChange={e => setProductTypeFilter(e.target.value)}>
+                  <option value="ALL">All Types</option>
+                  <option value="ITEM">Physical Items</option>
+                  <option value="SERVICE">Services</option>
+                </select>
+              </div>
+            </div>
+
             {loading ? <p className="loading-text">Loading products...</p> : (
               <div className="admin-table-container">
                 <table className="admin-table">
@@ -681,11 +718,12 @@ export default function AdminDashboard() {
                       <th>Product Info</th>
                       <th>Category & Type</th>
                       <th>Price</th>
+                      <th>Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map(prod => (
+                    {filteredProducts.map(prod => (
                       <tr key={prod.id} className="clickable-row" onClick={() => setSelectedProduct(prod)}>
                         <td>
                           <strong className="product-title-text">{prod.title}</strong>
@@ -697,13 +735,18 @@ export default function AdminDashboard() {
                         </td>
                         <td><strong className="product-price-text">₦{prod.price.toLocaleString()}</strong></td>
                         <td>
+                          <span className={`badge ${prod?.status?.toLowerCase() === 'active' ? 'active' : 'suspended'}`}>
+                            {prod.status || 'UNKNOWN'}
+                          </span>
+                        </td>
+                        <td>
                           <button className="btn-danger-outline btn-sm action-btn" onClick={(e) => { e.stopPropagation(); deleteProduct(prod.id); }}>
                             <FiTrash2 size={14} /> Remove Listing
                           </button>
                         </td>
                       </tr>
                     ))}
-                    {products.length === 0 && <tr><td colSpan="4" className="empty-table-cell admin-empty">No products found.</td></tr>}
+                    {filteredProducts.length === 0 && <tr><td colSpan="5" className="empty-table-cell admin-empty">No products match your filters.</td></tr>}
                   </tbody>
                 </table>
               </div>
